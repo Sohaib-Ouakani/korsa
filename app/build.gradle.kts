@@ -100,4 +100,10 @@ dependencies {
 
     //CoilCompose for image loading
     implementation(libs.coil.compose)
+
+    //Location Services
+    implementation(libs.play.services.location)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 }
