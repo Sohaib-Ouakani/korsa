@@ -84,7 +84,7 @@ dependencies {
     implementation(libs.postgrest.kt) // optional
 
     // Ktor engine for Android
-    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.okhttp)
 
     // Jetpack Compose (if not already present)
     implementation(libs.compose.auth.ui)
