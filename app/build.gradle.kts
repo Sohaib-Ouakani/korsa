@@ -85,6 +85,7 @@ dependencies {
 
     // Ktor engine for Android
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.core)
 
     // Jetpack Compose (if not already present)
     implementation(libs.compose.auth.ui)
