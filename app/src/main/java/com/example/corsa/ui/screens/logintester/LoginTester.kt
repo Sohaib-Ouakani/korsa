@@ -9,43 +9,44 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.corsa.supabase
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
+import org.koin.androidx.compose.koinViewModel
+import com.example.corsa.data.remote.supabase
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val viewModel = koinViewModel<LoginTesterViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val authState = supabase.composeAuth.rememberSignInWithGoogle(
         onResult = { result ->
             when (result) {
-                is NativeSignInResult.Success -> {
-                    errorMessage = null
-                    onLoginSuccess()
-                }
-                is NativeSignInResult.ClosedByUser -> {
-                    errorMessage = "Sign-in dismissed."
-                }
+                is NativeSignInResult.Success -> viewModel.onGoogleSignInSuccess()
+                is NativeSignInResult.ClosedByUser -> viewModel.onSignInDismissed()
                 is NativeSignInResult.Error -> {
                     Log.e("Auth", "Error: ${result.message}")
-                    errorMessage = "Error: ${result.message}"
+                    viewModel.onSignInError("Error: ${result.message}")
                 }
                 is NativeSignInResult.NetworkError -> {
                     Log.e("Auth", "Network error: ${result.message}")
-                    errorMessage = "Network error: ${result.message}"
+                    viewModel.onSignInError("Network error: ${result.message}")
                 }
             }
         }
     )
+
+    // React to success state
+    if (state is LoginState.Success) {
+        onLoginSuccess()
+        return
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -56,9 +57,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             Text("Sign in with Google")
         }
 
-        errorMessage?.let { msg ->
+        if (state is LoginState.Error) {
             Text(
-                text = msg,
+                text = (state as LoginState.Error).message,
                 color = Color.Red,
                 modifier = Modifier.padding(top = 16.dp)
             )

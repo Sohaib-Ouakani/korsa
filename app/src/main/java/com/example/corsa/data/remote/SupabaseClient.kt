@@ -1,4 +1,4 @@
-package com.example.corsa
+package com.example.corsa.data.remote
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
