@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.theme.CorsaTheme
@@ -40,7 +41,7 @@ import com.example.corsa.ui.theme.CorsaTheme
  *   onSurfaceVariant → muted / secondary text and icons
  */
 @Composable
-fun StrideHomeScreen(
+fun HomeScreen(
     // --- display data ---
     locationName: String = "CENTRAL PARK",
     lastRunKm: Double = 5.42,
@@ -52,22 +53,13 @@ fun StrideHomeScreen(
     onStartClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onGoalEditClick: () -> Unit = {},
-    onFriendsClick: () -> Unit = {},
-    onStatsClick: () -> Unit = {},
-    onMenuClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {},
+    navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
 
     Scaffold(
-        containerColor = cs.background,
-        bottomBar = {
-            BottomBar(
-                onRunClick     = onStartClick,
-                onFriendsClick = onFriendsClick,
-                onStatsClick   = onStatsClick,
-            )
-        }
+        topBar = { TopBar(navController) },
+        bottomBar = { BottomBar(navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -75,13 +67,6 @@ fun StrideHomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-
-            // ── Top bar ──────────────────────────────────────────────────────
-            TopBar(
-                onMenuClick    = onMenuClick,
-                onProfileClick = onProfileClick,
-            )
-
             Spacer(Modifier.height(16.dp))
 
             // ── Location label ───────────────────────────────────────────────
@@ -115,9 +100,11 @@ fun StrideHomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -129,7 +116,6 @@ fun StrideHomeScreen(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 1.2.sp,
                         )
-                        Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = "%.2f".format(lastRunKm),
@@ -138,7 +124,6 @@ fun StrideHomeScreen(
                                 fontSize = 42.sp,
                                 modifier = Modifier.alignByBaseline(),
                             )
-                            Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "KM",
                                 color = cs.onSurfaceVariant,
@@ -147,25 +132,12 @@ fun StrideHomeScreen(
                                 modifier = Modifier.alignByBaseline(),
                             )
                         }
-                        Spacer(Modifier.height(4.dp))
                         Text(
                             text = "%02d:%02d /KM".format(lastRunPaceMin, lastRunPaceSec),
                             color = cs.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                         )
-                    }
-
-                    // History icon button
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(cs.secondary)
-                            .clickable(onClick = onHistoryClick),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("↺", color = cs.onSurfaceVariant, fontSize = 18.sp)
                     }
                 }
             }
@@ -320,33 +292,30 @@ private fun LocationLable(cs: ColorScheme, locationName: String) {
 }
 
 // ── Reusable dark card ────────────────────────────────────────────────────────
-@Composable
-private fun Card(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        content = { Column(modifier = Modifier.padding(20.dp), content = content) }
-    )
-}
+//@Composable
+//private fun Card(
+//    modifier: Modifier = Modifier,
+//    content: @Composable ColumnScope.() -> Unit,
+//) {
+//    Card(
+//        modifier = modifier,
+//        shape = RoundedCornerShape(16.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+//        content = { Column(modifier = Modifier.padding(20.dp), content = content) }
+//    )
+//}
 
-@Preview(
-    name = "STRIDE Home – Dark",
-    showBackground = true,
-    backgroundColor = 0xFF1A1A1A,
-    device = "spec:width=390dp,height=844dp,dpi=420",
-)
-@Composable
-fun StrideHomeScreenPreview() {
-    CorsaTheme(darkTheme = true, dynamicColor = false) {
-        StrideHomeScreen()
-    }
-}
+//@Preview(
+//    name = "STRIDE Home – Dark",
+//    showBackground = true,
+//    backgroundColor = 0xFF1A1A1A,
+//    device = "spec:width=390dp,height=844dp,dpi=420",
+//)
+//@Composable
+//fun StrideHomeScreenPreview() {
+//    CorsaTheme(darkTheme = true, dynamicColor = false) {
+//        HomeScreen()
+//    }
+//}
 
 

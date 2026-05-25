@@ -2,13 +2,16 @@ package com.example.corsa.ui.composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,35 +26,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.corsa.ui.CorsaRoute
 
 @Composable
-fun BottomBar(
-    onRunClick: () -> Unit,
-    onFriendsClick: () -> Unit,
-    onStatsClick: () -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    NavigationBar(
-        containerColor = cs.background,
-        tonalElevation = 0.dp,
-        modifier = Modifier.height(72.dp),
-    ) {
+fun BottomBar(navController: NavController) {
+    BottomAppBar() {
         // RUN (active pill)
         NavigationBarItem(
             selected = true,
-            onClick = onRunClick,
+            onClick = { navController.navigate(CorsaRoute.Home) },
             icon = {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(14.dp))
-                        .background(cs.primary)
                         .padding(horizontal = 18.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.PlayArrow,
                         contentDescription = null,
-                        tint = cs.onPrimary,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -59,7 +53,6 @@ fun BottomBar(
             label = {
                 Text(
                     text = "RUN",
-                    color = cs.primary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp,
                 )
@@ -70,17 +63,16 @@ fun BottomBar(
         // FRIENDS
         NavigationBarItem(
             selected = false,
-            onClick = onFriendsClick,
+            onClick = { navController.navigate(CorsaRoute.LoginTester) },
             icon = {
                 Icon(
                     imageVector = Icons.Filled.Person,
                     contentDescription = null,
-                    tint = cs.onSurfaceVariant,
                     modifier = Modifier.size(22.dp),
                 )
             },
             label = {
-                Text("FRIENDS", color = cs.onSurfaceVariant, fontSize = 11.sp)
+                Text("FRIENDS", fontSize = 11.sp)
             },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
         )
@@ -88,12 +80,16 @@ fun BottomBar(
         // STATS
         NavigationBarItem(
             selected = false,
-            onClick = onStatsClick,
+            onClick = {  },
             icon = {
-                Text("▐▌", color = cs.onSurfaceVariant, fontSize = 18.sp)
+                Icon(
+                    imageVector = Icons.Default.Leaderboard,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                )
             },
             label = {
-                Text("STATS", color = cs.onSurfaceVariant, fontSize = 11.sp)
+                Text("STATS", fontSize = 11.sp)
             },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
         )
