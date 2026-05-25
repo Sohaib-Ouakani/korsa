@@ -23,6 +23,11 @@ dependencyResolutionManagement {
     }
 }
 
+gitHooks {
+    commitMsg { conventionalCommits() }
+    createHooks()
+}
+
 rootProject.name = "corsa"
 include(":app")
  
