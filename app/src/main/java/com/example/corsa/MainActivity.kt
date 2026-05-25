@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
 import com.example.corsa.ui.CorsaNavGraph
+import com.example.corsa.ui.screens.home.StrideHomeScreen
 import com.example.corsa.ui.theme.CorsaTheme
 
 class MainActivity : ComponentActivity() {
@@ -14,8 +15,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CorsaTheme {
-                val navController = rememberNavController()
-                CorsaNavGraph(navController)
+                StrideHomeScreen()
+//                val navController = rememberNavController()
+//                CorsaNavGraph(navController)
             }
         }
     }
