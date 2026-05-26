@@ -68,8 +68,8 @@ fun BottomBar(navController: NavController) {
 
         // STATS
         NavigationBarItem(
-            selected = false,
-            onClick = {  },
+            selected = currentRoute?.hasRoute<CorsaRoute.StatsScreen>() == true,
+            onClick = { navController.navigate(CorsaRoute.StatsScreen) },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Leaderboard,
