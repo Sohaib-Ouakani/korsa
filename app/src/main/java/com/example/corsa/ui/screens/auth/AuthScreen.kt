@@ -9,7 +9,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.AppBarText
-import com.example.corsa.ui.composables.SmallSpacer
 import com.example.corsa.ui.theme.Spacing
 
 @Composable
