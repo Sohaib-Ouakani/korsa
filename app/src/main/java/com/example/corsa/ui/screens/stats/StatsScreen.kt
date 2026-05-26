@@ -30,7 +30,7 @@ fun StatsScreen(navController: NavController) {
 
     Scaffold(
         topBar = { TopBar(navController) },
-        bottomBar = { BottomBar(navController) }
+        bottomBar = { BottomBar(navController) },
     ) { contentPadding ->
         Column(modifier = Modifier.padding(contentPadding)) {
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {

@@ -1,5 +1,6 @@
 package com.example.corsa.ui.theme
 
+import android.graphics.drawable.shapes.Shape
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,6 @@ fun CorsaTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }
