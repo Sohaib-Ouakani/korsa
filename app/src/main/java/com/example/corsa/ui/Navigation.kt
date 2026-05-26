@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.corsa.ui.screens.friends.FriendsScreen
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.logintester.LoginScreen
 import com.example.corsa.ui.screens.stats.StatsScreen
@@ -13,6 +14,8 @@ sealed interface CorsaRoute {
     @Serializable data object LoginTester : CorsaRoute
     @Serializable data object Home : CorsaRoute
     @Serializable data object StatsScreen : CorsaRoute
+
+    @Serializable data object FriendsScreen : CorsaRoute
 }
 
 @Composable
@@ -29,6 +32,9 @@ fun CorsaNavGraph(navController: NavHostController) {
         }
         composable<CorsaRoute.StatsScreen> {
             StatsScreen(navController = navController)
+        }
+        composable<CorsaRoute.FriendsScreen> {
+            FriendsScreen(navController = navController)
         }
     }
 }
