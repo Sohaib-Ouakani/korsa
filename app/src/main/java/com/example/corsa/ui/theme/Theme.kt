@@ -52,6 +52,7 @@ fun CorsaTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = CorsaShapes,
         content = content
     )
 }
