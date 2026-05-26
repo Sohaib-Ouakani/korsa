@@ -9,6 +9,7 @@ object Spacing {
     val lg  = 24.dp
     val xl  = 32.dp
     val xxl = 48.dp
+    val cardSpacing = 90.dp
 }
 
 // Usage:

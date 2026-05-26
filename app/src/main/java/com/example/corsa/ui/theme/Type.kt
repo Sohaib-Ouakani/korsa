@@ -27,9 +27,26 @@ val Typography = Typography(
         fontSize = 60.sp,
         lineHeight = 58.sp,
     ),
+    displayMedium = TextStyle( //use this for big bold text in the center of the screen like in the home page "READY TO MOVE" text
+        fontWeight = FontWeight.ExtraBold,
+        fontStyle = FontStyle.Italic,
+        fontSize = 42.sp,
+        lineHeight = 58.sp,
+    ),
+    displaySmall = TextStyle( //use this for big bold text in the center of the screen like in the home page "READY TO MOVE" text
+        fontWeight = FontWeight.ExtraBold,
+        fontStyle = FontStyle.Italic,
+        fontSize = 15.sp,
+        lineHeight = 58.sp,
+    ),
     labelLarge = TextStyle( //automatically applied to Buttons like composables
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
+        letterSpacing = 1.sp,
+    ),
+    labelSmall = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
         letterSpacing = 1.sp,
     )
 )

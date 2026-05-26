@@ -4,11 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,16 +17,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
-import com.example.corsa.ui.theme.CorsaTheme
+import com.example.corsa.ui.theme.Size
+import com.example.corsa.ui.theme.Spacing
 
 /**
  * STRIDE – Home Screen (pure View, no ViewModel wiring).
@@ -42,17 +43,7 @@ import com.example.corsa.ui.theme.CorsaTheme
  */
 @Composable
 fun HomeScreen(
-    // --- display data ---
-    locationName: String = "CENTRAL PARK",
-    lastRunKm: Double = 5.42,
-    lastRunPaceMin: Int = 4,
-    lastRunPaceSec: Int = 45,
-    goalKm: Double = 25.0,
-    goalProgressFraction: Float = 0.65f,
-    // --- callbacks ---
-    onStartClick: () -> Unit = {},
-    onHistoryClick: () -> Unit = {},
-    onGoalEditClick: () -> Unit = {},
+    state: HomeState,
     navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
@@ -67,163 +58,41 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.md))
 
             // ── Location label ───────────────────────────────────────────────
-            LocationLable(cs, locationName)
+            // TODO: we can add new label to display other stats, like meteo
+            LocationLabel(cs, state.locationName)
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.md))
 
             // ── Hero headline ────────────────────────────────────────────────
+            // Uses Typography.displayLarge (ExtraBold Italic 60sp / lh 58sp)
             Text(
                 text = "READY TO\nMOVE?",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = Spacing.lg),
                 color = cs.onSurface,
-                fontWeight = FontWeight.ExtraBold,
-                fontStyle = FontStyle.Italic,
-                fontSize = 56.sp,
-                lineHeight = 58.sp,
+                style = MaterialTheme.typography.displayLarge,
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(Spacing.xxl))
 
             // ── START button ─────────────────────────────────────────────────
-            StartButton(cs, onStartClick)
+            StartButton(cs) { navController.navigate(CorsaRoute.StopWatchScreen) }
 
-            Spacer(Modifier.height(36.dp))
-
-            // ── Last Run card ────────────────────────────────────────────────
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text(
-                            text = "LAST RUN",
-                            color = cs.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.2.sp,
-                        )
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "%.2f".format(lastRunKm),
-                                color = cs.onSurface,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 42.sp,
-                                modifier = Modifier.alignByBaseline(),
-                            )
-                            Text(
-                                text = "KM",
-                                color = cs.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                modifier = Modifier.alignByBaseline(),
-                            )
-                        }
-                        Text(
-                            text = "%02d:%02d /KM".format(lastRunPaceMin, lastRunPaceSec),
-                            color = cs.primary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Spacing.xxl))
 
             // ── Goal card ────────────────────────────────────────────────────
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "GOAL",
-                            color = cs.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.2.sp,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "%.1f".format(goalKm),
-                                color = cs.onSurface,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 42.sp,
-                                modifier = Modifier.alignByBaseline(),
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "KM",
-                                color = cs.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                modifier = Modifier.alignByBaseline(),
-                            )
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        // Progress track
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(5.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(cs.secondary),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(goalProgressFraction)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(50))
-                                    .background(cs.primary),
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "${(goalProgressFraction * 100).toInt()}% OF WEEKLY TARGET",
-                            color = cs.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.8.sp,
-                        )
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    // Edit goal icon button
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(cs.secondary)
-                            .clickable(onClick = onGoalEditClick),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("⟳", color = cs.onSurfaceVariant, fontSize = 18.sp)
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
+            GoalCard(
+                cs,
+                state.goalKm,
+                state.currentKm,
+                state.progress
+            )
+            // TODO: we can add new cards to display other stats, like meteo
         }
     }
 }
@@ -235,7 +104,7 @@ private fun ColumnScope.StartButton(
 ) {
     Box(
         modifier = Modifier
-            .size(220.dp)
+            .size(Size.xxl)
             .align(Alignment.CenterHorizontally)
             .clip(CircleShape)
             .background(cs.primary)
@@ -254,56 +123,90 @@ private fun ColumnScope.StartButton(
                 imageVector = Icons.Filled.PlayArrow,
                 contentDescription = "Start",
                 tint = cs.onPrimary,
-                modifier = Modifier.size(52.dp),
+                modifier = Modifier.size(Size.l),
             )
+            // Uses Typography.titleMedium (ExtraBold Italic 28sp)
             Text(
                 text = "START",
+                style = MaterialTheme.typography.titleMedium,
                 color = cs.onPrimary,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 24.sp,
-                letterSpacing = 3.sp,
             )
         }
     }
 }
 
 @Composable
-private fun LocationLable(cs: ColorScheme, locationName: String) {
+private fun LocationLabel(cs: ColorScheme, locationName: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(cs.primary)
+        Icon(
+            imageVector = Icons.Filled.LocationOn,
+            contentDescription = "Location",
+            modifier = Modifier.size(Size.s)
         )
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(Spacing.sm))
         Text(
             text = locationName,
             color = cs.primary,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            letterSpacing = 1.5.sp,
+            style = MaterialTheme.typography.labelSmall
         )
     }
 }
 
-// ── Reusable dark card ────────────────────────────────────────────────────────
-//@Composable
-//private fun Card(
-//    modifier: Modifier = Modifier,
-//    content: @Composable ColumnScope.() -> Unit,
-//) {
-//    Card(
-//        modifier = modifier,
-//        shape = RoundedCornerShape(16.dp),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-//        content = { Column(modifier = Modifier.padding(20.dp), content = content) }
-//    )
-//}
+@Composable
+private fun GoalCard(
+    cs: ColorScheme,
+    goalKm: Double,
+    currentKm: Double,
+    progress: Double
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md),  // was 16.dp → Spacing.md
+        shape = MaterialTheme.shapes.medium,    // was RoundedCornerShape(16.dp) → CorsaShapes.medium (Spacing.md)
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.lg),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.cardSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = "GOAL",
+                    color = cs.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "%.2f KM".format(goalKm),
+                        color = cs.onSurface,
+                        style = MaterialTheme.typography.displayMedium
+                    )
+                }
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress.toFloat() },
+
+                )
+                Spacer(
+                    modifier = Modifier.height(Spacing.sm)
+                )
+                Text(
+                    text = "%.2f KM".format(currentKm),
+                    color = cs.primary,
+                    style = MaterialTheme.typography.displaySmall
+                )
+            }
+        }
+    }
+}
 
 //@Preview(
 //    name = "STRIDE Home – Dark",
@@ -317,5 +220,3 @@ private fun LocationLable(cs: ColorScheme, locationName: String) {
 //        HomeScreen()
 //    }
 //}
-
-

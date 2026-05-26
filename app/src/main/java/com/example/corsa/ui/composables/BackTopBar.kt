@@ -7,16 +7,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BackTopBar(onBack: () -> Unit) {
+fun BackTopBar(navController: NavController) {
     CenterAlignedTopAppBar(
-        title = {
-            AppBarText()
-        },
+        title = { AppBarText() },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = { navController.popBackStack() }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
