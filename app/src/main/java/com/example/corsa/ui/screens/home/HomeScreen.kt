@@ -80,7 +80,7 @@ fun HomeScreen(
             Spacer(Modifier.height(Spacing.xxl))
 
             // ── START button ─────────────────────────────────────────────────
-            StartButton(cs) { navController.navigate(CorsaRoute.Home) }
+            StartButton(cs) { navController.navigate(CorsaRoute.StopWatchScreen) }
 
             Spacer(Modifier.height(Spacing.xxl))
 
