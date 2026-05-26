@@ -9,6 +9,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.AppBarText
+import com.example.corsa.ui.composables.SmallSpacer
 import com.example.corsa.ui.theme.Spacing
 
 @Composable
@@ -48,10 +49,9 @@ fun AuthScreen(
                     shape = MaterialTheme.shapes.large,
                 ) {
                     Text(
-                        text = "Log In",
+                        text = "Accedi",
                     )
                 }
-
                 OutlinedButton(
                     onClick = { navController.navigate(CorsaRoute.RegisterScreen) },
                     modifier = Modifier
@@ -60,7 +60,7 @@ fun AuthScreen(
                     shape = MaterialTheme.shapes.large,
                 ) {
                     Text(
-                        text = "Create Account",
+                        text = "Registrati",
                     )
                 }
             }

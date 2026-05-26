@@ -7,6 +7,11 @@ import androidx.compose.ui.Modifier
 import com.example.corsa.ui.theme.Spacing
 
 @Composable
+fun SmallSpacer() {
+    Spacer(Modifier.height(Spacing.sm))
+}
+
+@Composable
 fun MediumSpacer() {
     Spacer(Modifier.height(Spacing.md))
 }

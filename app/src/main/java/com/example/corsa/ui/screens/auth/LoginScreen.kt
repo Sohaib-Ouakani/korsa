@@ -140,7 +140,7 @@ private fun LoginButton(onClick: () -> Unit) {
             .height(Spacing.xxl),
         shape = MaterialTheme.shapes.large,
     ) {
-        Text(text = "Log In")
+        Text(text = "Accedi")
     }
 }
 
@@ -153,7 +153,7 @@ private fun GoogleButton(onClick: () -> Unit) {
             .height(Spacing.xxl),
         shape = MaterialTheme.shapes.large,
     ) {
-        Text(text = "Continue with Google")
+        Text(text = "Continua con Google")
     }
 }
 
@@ -166,7 +166,7 @@ private fun LoginDivider() {
     ) {
         HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = "or",
+            text = "altrimenti",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
