@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ fun ProfileDetailScreen(
     viewModel: ProfileDetailViewModel
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val isFollowing by viewModel.isFollowing.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
         is ProfileDetailUiState.Loading -> ProfileDetailLoading()
@@ -63,7 +65,11 @@ fun ProfileDetailScreen(
                         navController = navController,
                         runentries    = state.runs,
                         infoentries   = state.userInfo,
-                        header = { ProfileHeader(userInfo = state.userInfo) }
+                        header = { ProfileHeader(
+                            userInfo      = state.userInfo,
+                            isFollowing   = isFollowing,
+                            onFollowClick = viewModel::toggleFollow
+                        ) }
                     )
                 }
             }
@@ -74,7 +80,11 @@ fun ProfileDetailScreen(
 // ── Profile header ────────────────────────────────────────────────────────
 
 @Composable
-fun ProfileHeader(userInfo: UserRankEntry) {
+fun ProfileHeader(
+    userInfo: UserRankEntry,
+    isFollowing: Boolean,
+    onFollowClick: () -> Unit
+) {
     val cs = MaterialTheme.colorScheme
 
     Column(
@@ -123,13 +133,19 @@ fun ProfileHeader(userInfo: UserRankEntry) {
 
         // Pulsante segui
         Button(
-            onClick  = { /* TODO */ },
-            shape    = RoundedCornerShape(50),
+            onClick = onFollowClick,
+            shape   = RoundedCornerShape(50),
+            colors  = if (isFollowing)
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor   = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            else ButtonDefaults.buttonColors(),
             modifier = Modifier
                 .padding(horizontal = Spacing.lg)
                 .fillMaxWidth()
         ) {
-            Text(text = "Segui")
+            Text(text = if (isFollowing) "Seguito" else "Segui")
         }
     }
 }
