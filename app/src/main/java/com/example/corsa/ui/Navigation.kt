@@ -11,6 +11,7 @@ import com.example.corsa.ui.screens.friends.FriendsScreen
 import com.example.corsa.ui.screens.auth.AuthScreen
 import com.example.corsa.ui.screens.auth.LoginScreen
 import com.example.corsa.ui.screens.auth.RegisterScreen
+import com.example.corsa.ui.screens.friends.AddFriendsScreen
 import com.example.corsa.ui.screens.friends.FriendsViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
@@ -24,6 +25,7 @@ import org.koin.androidx.compose.koinViewModel
 sealed interface CorsaRoute {
     @Serializable data object LoginTester : CorsaRoute
     @Serializable data object Home : CorsaRoute
+    @Serializable data object AddFriendsScreen : CorsaRoute
     @Serializable data object StopWatchScreen : CorsaRoute
     @Serializable data object StatsScreen : CorsaRoute
 
@@ -59,6 +61,10 @@ fun CorsaNavGraph(navController: NavHostController) {
         composable<CorsaRoute.FriendsScreen> {
             val friendsVM = koinViewModel<FriendsViewModel>()
             FriendsScreen(navController, friendsVM)
+        }
+        composable<CorsaRoute.AddFriendsScreen> {
+            val friendsVM = koinViewModel<FriendsViewModel>()
+            AddFriendsScreen(navController, friendsVM)
         }
         composable<CorsaRoute.AuthScreen> {
             AuthScreen(navController = navController)

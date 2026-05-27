@@ -33,6 +33,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.theme.CorsaTheme
@@ -83,7 +85,7 @@ fun FriendsScreen(
         topBar = { TopBar(navController) },
         bottomBar = { BottomBar(navController) },
         floatingActionButton = { FloatingActionButton(
-            onClick = {},
+            onClick = { navController.navigate(CorsaRoute.AddFriendsScreen) },
             modifier = Modifier.size(56.dp)
         ) {
             Icon(Icons.Default.PersonAdd, "Add Friends")
@@ -250,7 +252,7 @@ fun FeedCard(entry: RunFeedEntry) {
 fun FriendSearchBar(viewModel: FriendsViewModel) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val allFriends = viewModel.friends.friendsName
+    val allFriends = viewModel.searchStatus.friendsName
     val filteredFriends = if (query.isBlank()) {
         emptyList()
     } else {
@@ -279,8 +281,11 @@ fun FriendSearchBar(viewModel: FriendsViewModel) {
                     )
                 },
                 trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) {
+                    if (expanded) {
+                        IconButton(onClick = {
+                            query = ""
+                            expanded = false
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear search"
@@ -294,11 +299,11 @@ fun FriendSearchBar(viewModel: FriendsViewModel) {
         expanded = expanded,
         onExpandedChange = { expanded = it },
         shape = searchBarShape,
-        windowInsets = WindowInsets(0.dp),   // ✅ prevents inset from fighting the clip
+        windowInsets = WindowInsets(0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(searchBarShape)            // ✅ hard-clips the composable to stay rounded
+            .clip(searchBarShape)
     ) {
         Column(
             modifier = Modifier
@@ -309,6 +314,9 @@ fun FriendSearchBar(viewModel: FriendsViewModel) {
                 filteredFriends.forEach { friend ->
                     ListItem(
                         headlineContent = { Text(friend) },
+                        colors = ListItemDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
                         modifier = Modifier.clickable {
 
                             query = friend
@@ -324,6 +332,9 @@ fun FriendSearchBar(viewModel: FriendsViewModel) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ),
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.SearchOff,
