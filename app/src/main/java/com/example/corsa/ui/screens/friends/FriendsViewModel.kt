@@ -32,7 +32,7 @@ data class Friends(
 enum class SortBy { Kilometers, Level }
 
 class FriendsViewModel : ViewModel() {
-    val friendList = Friends(
+    val friends = Friends(
         listOf("Rossi", "Io", "Gardo", "Pelats", "Aguzzi", "Cloe")
     )
     private val _rankEntries = MutableStateFlow<List<UserRankEntry>>(emptyList())
