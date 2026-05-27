@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.example.corsa.ui.screens.friends.FriendsScreen
 import com.example.corsa.ui.screens.auth.AuthScreen
 import com.example.corsa.ui.screens.auth.LoginScreen
@@ -17,6 +18,8 @@ import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.home.StopWatchScreen
 import com.example.corsa.ui.screens.logintester.LoginScreen
 import com.example.corsa.ui.screens.profile.ProfileScreen
+import com.example.corsa.ui.screens.rundetail.RunDetailScreen
+import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
 import com.example.corsa.ui.screens.stats.StatsScreen
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
@@ -32,6 +35,7 @@ sealed interface CorsaRoute {
     @Serializable data object LoginScreen : CorsaRoute
     @Serializable data object RegisterScreen : CorsaRoute
     @Serializable data object ProfileScreen : CorsaRoute
+    @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
 }
 
 @Composable
@@ -70,6 +74,10 @@ fun CorsaNavGraph(navController: NavHostController) {
         }
         composable<CorsaRoute.ProfileScreen> {
             ProfileScreen(navController = navController)
+        }
+        composable<CorsaRoute.RunDetailScreen> {
+            val viewModel = koinViewModel<RunDetailViewModel>()
+            RunDetailScreen(navController = navController, viewModel = viewModel)
         }
     }
 }
