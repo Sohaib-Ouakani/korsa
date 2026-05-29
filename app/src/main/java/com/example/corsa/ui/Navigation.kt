@@ -17,8 +17,8 @@ import com.example.corsa.ui.screens.friends.FriendsViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.home.StopWatchScreen
-import com.example.corsa.ui.screens.profile.ProfileScreen
-import com.example.corsa.ui.screens.profile.ProfileViewModel
+import com.example.corsa.ui.screens.settings.SettingsScreen
+import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailScreen
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailScreen
@@ -38,7 +38,7 @@ sealed interface CorsaRoute {
     @Serializable data object AuthScreen : CorsaRoute
     @Serializable data object LoginScreen : CorsaRoute
     @Serializable data object RegisterScreen : CorsaRoute
-    @Serializable data object ProfileScreen : CorsaRoute
+    @Serializable data object SettingsScreen : CorsaRoute
     @Serializable data class ProfileDetailScreen(val userId: String) : CorsaRoute
 
     @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
@@ -88,9 +88,9 @@ fun CorsaNavGraph(navController: NavHostController) {
                     val friendsVM = koinViewModel<FriendsViewModel>()
                     FriendsScreen(navController = navController, friendsVM)
                 }
-                composable<CorsaRoute.ProfileScreen> {
-                    val profileViewModel = koinViewModel<ProfileViewModel>()
-                    ProfileScreen(navController = navController, profileViewModel::logout)
+                composable<CorsaRoute.SettingsScreen> {
+                    val settingsViewModel = koinViewModel<SettingsViewModel>()
+                    SettingsScreen(navController = navController, settingsViewModel::logout)
                 }
                 composable<CorsaRoute.RunDetailScreen> {
                     val viewModel = koinViewModel<RunDetailViewModel>()

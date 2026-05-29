@@ -1,4 +1,4 @@
-package com.example.corsa.ui.screens.profile
+package com.example.corsa.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,7 +22,7 @@ import com.example.corsa.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileScreen(
+fun SettingsScreen(
     navController: NavController,
     onLogOut: () -> Unit
     ) {
