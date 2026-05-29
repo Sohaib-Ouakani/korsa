@@ -1,5 +1,6 @@
 package com.example.corsa.data.model
 
+import kotlin.time.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -17,14 +18,7 @@ data class Profile(
     @SerialName("total_km")
     val totalKm: Float = 0f,
     @SerialName("created_at")
-    val createdAt: String? = null,
+    val createdAt: Instant? = null,
     @SerialName("updated_at")
-    val updatedAt: String? = null,
-)
-
-@Serializable
-data class ProfileUpdate(
-    val username: String? = null,
-    @SerialName("avatar_path")
-    val avatarPath: String? = null,
+    val updatedAt: Instant? = null,
 )

@@ -131,4 +131,7 @@ dependencies {
 
     //For MapLibre
     implementation(libs.android.sdk)
+
+    //For timestamps in model package
+    implementation(libs.kotlinx.datetime)
 }
