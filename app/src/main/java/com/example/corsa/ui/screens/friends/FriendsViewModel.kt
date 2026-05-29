@@ -25,9 +25,18 @@ data class RunFeedEntry(
     val distance: Double
 )
 
+data class SearchStatus(
+    val friendsName: List<String>,
+    val notFriends: List<String>
+)
+
 enum class SortBy { Kilometers, Level }
 
-class FriendViewModel : ViewModel() {
+class FriendsViewModel : ViewModel() {
+    val searchStatus = SearchStatus(
+        listOf("Rossi", "Io", "Gardo", "Pelats", "Aguzzi", "Cloe"),
+        listOf("Pianini", "Moro", "Barbuto", "Baivdi", "Corteccia")
+    )
     private val _rankEntries = MutableStateFlow<List<UserRankEntry>>(emptyList())
     private val _feedEntries = MutableStateFlow<List<RunFeedEntry>>(emptyList())
     val rankEntries: StateFlow<List<UserRankEntry>> = _rankEntries

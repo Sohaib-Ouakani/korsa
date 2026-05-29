@@ -1,12 +1,14 @@
 package com.example.corsa.ui.screens.friends
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,16 +19,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -35,19 +47,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.theme.CorsaTheme
@@ -58,8 +71,12 @@ enum class StatsTab(val label: String) {
     Feed("Feed")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendsScreen(navController: NavController) {
+fun FriendsScreen(
+    navController: NavController,
+    viewModel: FriendsViewModel
+) {
     var selectedTab by remember { mutableStateOf(StatsTab.Rank) }
     val tabs = StatsTab.entries
     val cs = MaterialTheme.colorScheme
@@ -68,7 +85,7 @@ fun FriendsScreen(navController: NavController) {
         topBar = { TopBar(navController) },
         bottomBar = { BottomBar(navController) },
         floatingActionButton = { FloatingActionButton(
-            onClick = {},
+            onClick = { navController.navigate(CorsaRoute.AddFriendsScreen) },
             modifier = Modifier.size(56.dp)
         ) {
             Icon(Icons.Default.PersonAdd, "Add Friends")
@@ -80,19 +97,18 @@ fun FriendsScreen(navController: NavController) {
             Spacer(Modifier.height(16.dp))
             // ── Hero headline ────────────────────────────────────────────────
 
-            Text(
-                text = "AMICIZIA \n YEE!!!",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg),
-                color = cs.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
+//            Text(
+//                text = "AMICIZIA \n YEE!!!",
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(horizontal = Spacing.lg),
+//                color = cs.onSurface,
+//                style = MaterialTheme.typography.titleMedium,
+//                textAlign = TextAlign.Center,
+//            )
             // ── Search bar  ────────────────────────────────────────────────
-
-            //to do
-
+            //TODO
+            FriendSearchBar(viewModel)
             // ── Primary Row  ────────────────────────────────────────────────
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
                 tabs.forEach { tab ->
@@ -105,8 +121,8 @@ fun FriendsScreen(navController: NavController) {
             }
 
             when (selectedTab) {
-                StatsTab.Rank -> Rank()
-                StatsTab.Feed -> Feed()
+                StatsTab.Rank -> Rank(viewModel)
+                StatsTab.Feed -> Feed(viewModel)
             }
         }
     }
@@ -115,7 +131,7 @@ fun FriendsScreen(navController: NavController) {
 // ── Feed part  ────────────────────────────────────────────────
 
 @Composable
-fun Feed(viewModel: FriendViewModel = viewModel<FriendViewModel>()) {
+fun Feed(viewModel: FriendsViewModel) {
     LaunchedEffect(Unit) {
         viewModel.loadFeed()
     }
@@ -231,6 +247,109 @@ fun FeedCard(entry: RunFeedEntry) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FriendSearchBar(viewModel: FriendsViewModel) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val allFriends = viewModel.searchStatus.friendsName
+    val filteredFriends = if (query.isBlank()) {
+        emptyList()
+    } else {
+        allFriends.filter { it.contains(query, ignoreCase = true) }
+    }
+
+    LaunchedEffect(query) {
+        if (query.isBlank()) expanded = false
+    }
+
+    val searchBarShape = RoundedCornerShape(28.dp)
+
+    SearchBar(
+        inputField = {
+            SearchBarDefaults.InputField(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = { expanded = false },
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                placeholder = { Text("Search Friends...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
+                    )
+                },
+                trailingIcon = {
+                    if (expanded) {
+                        IconButton(onClick = {
+                            query = ""
+                            expanded = false
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search"
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        shape = searchBarShape,
+        windowInsets = WindowInsets(0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(searchBarShape)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { traversalIndex = 1f }
+        ) {
+            if (filteredFriends.isNotEmpty()) {
+                filteredFriends.forEach { friend ->
+                    ListItem(
+                        headlineContent = { Text(friend) },
+                        colors = ListItemDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        modifier = Modifier.clickable {
+
+                            query = friend
+                            expanded = false
+                        }
+                    )
+                }
+            } else if (query.isNotBlank()) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            "No friends found",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ),
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.SearchOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
 // ── Helper per formattare la data ─────────────────────────────────────────────
 fun formatFeedDate(isoString: String): String {
     return try {
@@ -251,7 +370,7 @@ enum class RankTab(val label: String) {
 }
 
 @Composable
-fun Rank(viewModel: FriendViewModel = viewModel<FriendViewModel>()) {
+fun Rank(viewModel: FriendsViewModel) {
     var rankSelectedTab by remember { mutableStateOf(RankTab.Kilometers) }
     val tabs = RankTab.entries
 
