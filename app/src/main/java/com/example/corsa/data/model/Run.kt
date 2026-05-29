@@ -9,9 +9,9 @@ import kotlin.uuid.Uuid
 
 @Serializable
 data class Run @OptIn(ExperimentalUuidApi::class) constructor(
-    val id: Uuid,
+    val id: String,
     @SerialName("user_id")
-    val userId: Uuid,
+    val userId: String,
     @SerialName("start_time")
     val startTime: Instant,
     @SerialName("end_time")

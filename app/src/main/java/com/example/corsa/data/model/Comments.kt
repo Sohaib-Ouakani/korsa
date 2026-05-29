@@ -8,11 +8,11 @@ import kotlin.uuid.Uuid
 
 @Serializable
 data class Comments @OptIn(ExperimentalUuidApi::class) constructor(
-    val id: Uuid,
+    val id: String,
     @SerialName("run_id")
-    val runId: Uuid,
+    val runId: String,
     @SerialName("author_id")
-    val authorId: Uuid,
+    val authorId: String,
     val content: String,
     @SerialName("created_at")
     val createdAt: Instant,

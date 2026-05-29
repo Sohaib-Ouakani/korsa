@@ -254,7 +254,7 @@ fun RunDetailSheetContent(
         item {
             UserDateRow(
                 userId = run.userId,
-                startTime = run.startTime,
+                startTime = run.startTime.toString(),
                 navController = navController
             )
         }
@@ -289,7 +289,7 @@ fun RunDetailSheetContent(
 @Composable
 fun UserDateRow(
     userId: String,
-    startTime: java.time.ZonedDateTime,
+    startTime: String,
     navController: NavController
 ) {
     val dateLabel = startTime.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))

@@ -39,30 +39,7 @@ class FakeRunsRepository : RunsRepository {
     }
 """.trimIndent()
 
-    private val fakeRuns = listOf(
-        Run(
-            id = "run-001",
-            userId = "user-abc",
-            startTime = ZonedDateTime.now().minusHours(1).minusMinutes(12),
-            endTime = ZonedDateTime.now(),
-            path = fakePath,
-            distanceMeters = 7_430f,
-            meanPaceSeconds = 312,      // 5:12 /km
-            temperature = 18.5f,
-            elevationGain = 54f
-        ),
-        Run(
-            id = "run-002",
-            userId = "user-abc",
-            startTime = ZonedDateTime.now().minusDays(1).minusMinutes(45),
-            endTime = ZonedDateTime.now().minusDays(1),
-            path = fakePath,
-            distanceMeters = 5_100f,
-            meanPaceSeconds = 335,
-            temperature = null,
-            elevationGain = 30f
-        )
-    )
+    private val fakeRuns = listOf<Run>()
 
     override fun getRunById(id: String): Flow<Run?> = flow {
         emit(fakeRuns.firstOrNull { it.id == id })

@@ -8,11 +8,11 @@ import kotlin.uuid.Uuid
 
 @Serializable
 data class Likes @OptIn(ExperimentalUuidApi::class) constructor(
-    val id: Uuid,
+    val id: String,
     @SerialName("run_id")
-    val runId: Uuid,
+    val runId: String,
     @SerialName("profile_id")
-    val profileId: Uuid,
+    val profileId: String,
     @SerialName("created_at")
     val createdAt: Instant,
 )

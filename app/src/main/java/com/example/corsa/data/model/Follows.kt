@@ -7,9 +7,9 @@ import kotlin.uuid.Uuid
 
 @Serializable
 data class Follows @OptIn(ExperimentalUuidApi::class) constructor(
-    val id: Uuid,
+    val id: String,
     @SerialName("follower_id")
-    val followerId: Uuid,
+    val followerId: String,
     @SerialName("following_id")
-    val followingId: Uuid,
+    val followingId: String,
 )
