@@ -22,7 +22,10 @@ import com.example.corsa.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(
+    navController: NavController,
+    onLogOut: () -> Unit
+    ) {
 
     // TODO: load from supabase.auth.currentUserOrNull()
     val currentUsername = "mario_rossi"
@@ -142,6 +145,14 @@ fun ProfileScreen(navController: NavController) {
                     shape = MaterialTheme.shapes.large,
                 ) {
                     Text("Cambia password")
+                }
+
+                Spacer(Modifier.height(Spacing.xs))
+
+                Button(
+                    onClick = onLogOut
+                ) {
+                    Text("Logout")
                 }
 
                 if (showReauthDialog) {

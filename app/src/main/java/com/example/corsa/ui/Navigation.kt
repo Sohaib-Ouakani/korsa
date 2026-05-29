@@ -17,6 +17,7 @@ import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.home.StopWatchScreen
 import com.example.corsa.ui.screens.profile.ProfileScreen
+import com.example.corsa.ui.screens.profile.ProfileViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailScreen
 import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
 import com.example.corsa.ui.screens.splash.SplashScreen
@@ -39,8 +40,8 @@ sealed interface CorsaRoute {
 
 @Composable
 fun CorsaNavGraph(navController: NavHostController) {
-    val viewModel: AuthStateViewModel = koinViewModel()
-    val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
+    val authViewModel: AuthStateViewModel = koinViewModel()
+    val startDestination by authViewModel.startDestination.collectAsStateWithLifecycle()
 
     when (startDestination) {
         StartDestination.Loading -> SplashScreen()
@@ -56,7 +57,10 @@ fun CorsaNavGraph(navController: NavHostController) {
                     AuthScreen(navController = navController)
                 }
                 composable<CorsaRoute.LoginScreen> {
-                    LoginScreen(navController = navController)
+                    LoginScreen(
+                        navController = navController,
+                        onEmailLogin = { string: String, string1: String -> }
+                    )
                 }
                 composable<CorsaRoute.RegisterScreen> {
                     RegisterScreen(navController = navController)
@@ -78,7 +82,8 @@ fun CorsaNavGraph(navController: NavHostController) {
                     FriendsScreen(navController = navController)
                 }
                 composable<CorsaRoute.ProfileScreen> {
-                    ProfileScreen(navController = navController)
+                    val profileViewModel = koinViewModel<ProfileViewModel>()
+                    ProfileScreen(navController = navController, profileViewModel::logout)
                 }
                 composable<CorsaRoute.RunDetailScreen> {
                     val viewModel = koinViewModel<RunDetailViewModel>()

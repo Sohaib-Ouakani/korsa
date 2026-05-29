@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.auth
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -18,12 +19,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
+import io.github.jan.supabase.compose.auth.composeAuth
+import org.koin.compose.koinInject
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    onEmailLogin: (email: String, password: String) -> Unit,
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val supabase = koinInject<SupabaseClient>()
+
+    val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
 
     Scaffold(
         topBar = { LoginScreenTopBar(onBack = { navController.popBackStack() }) }
@@ -35,22 +47,7 @@ fun LoginScreen(navController: NavController) {
                 .padding(horizontal = Spacing.lg),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Hero text
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "WELCOME\nBACK!",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg),
-                    style = MaterialTheme.typography.displayLarge,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            HeroText()
 
             Column(
                 modifier = Modifier
@@ -66,10 +63,29 @@ fun LoginScreen(navController: NavController) {
                     onToggleVisibility = { passwordVisible = !passwordVisible }
                 )
                 LoginDivider()
-                GoogleButton(onClick = { /* TODO: hook up Google login */ })
+                GoogleButton(onClick = { googleAuthState.startFlow() })
                 LoginButton(onClick = { /* TODO: hook up email login */ })
             }
         }
+    }
+}
+
+@Composable
+private fun ColumnScope.HeroText() {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "WELCOME\nBACK!",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg),
+            style = MaterialTheme.typography.displayLarge,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
