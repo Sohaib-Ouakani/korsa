@@ -11,17 +11,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-sealed class StartDestination {
-    object Loading : StartDestination()
-    object Auth : StartDestination()
-    object Home : StartDestination()
+enum class StartDestination {
+    Loading,
+    Auth,
+    Home
 }
 
 class AuthStateViewModel(
     authRepository: AuthRepository
 ) : ViewModel() {
 
-    val startDestination = MutableStateFlow<StartDestination>(StartDestination.Loading)
+    val startDestination = MutableStateFlow(StartDestination.Loading)
 
     init {
         authRepository.sessionStatus
