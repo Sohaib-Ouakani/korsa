@@ -7,7 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.corsa.ui.screens.MainViewModel
+import com.example.corsa.ui.screens.AuthStateViewModel
 import com.example.corsa.ui.screens.StartDestination
 import com.example.corsa.ui.screens.friends.FriendsScreen
 import com.example.corsa.ui.screens.auth.AuthScreen
@@ -39,7 +39,7 @@ sealed interface CorsaRoute {
 
 @Composable
 fun CorsaNavGraph(navController: NavHostController) {
-    val viewModel: MainViewModel = koinViewModel()
+    val viewModel: AuthStateViewModel = koinViewModel()
     val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
 
     when (startDestination) {

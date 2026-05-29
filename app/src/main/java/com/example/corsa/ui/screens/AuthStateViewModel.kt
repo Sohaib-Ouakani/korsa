@@ -13,7 +13,7 @@ sealed class StartDestination {
     object Home : StartDestination()
 }
 
-class MainViewModel(
+class AuthStateViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 

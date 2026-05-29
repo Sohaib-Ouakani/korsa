@@ -4,7 +4,7 @@ import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.AuthRepositoryImpl
 import com.example.corsa.data.repositories.FakeRunsRepository
 import com.example.corsa.data.repositories.RunsRepository
-import com.example.corsa.ui.screens.MainViewModel
+import com.example.corsa.ui.screens.AuthStateViewModel
 import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
 import io.github.jan.supabase.auth.Auth
@@ -31,7 +31,7 @@ val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<RunsRepository> { FakeRunsRepository() }
 
-    viewModel { MainViewModel(get()) }
+    viewModel { AuthStateViewModel(get()) }
     viewModel { HomeViewModel() }
     viewModel { params -> RunDetailViewModel(get(), params.get()) }
 }
