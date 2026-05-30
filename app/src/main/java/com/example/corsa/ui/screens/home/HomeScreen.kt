@@ -17,11 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
+import com.example.corsa.ui.premissions.LocationPermissionHandler
+import com.example.corsa.ui.premissions.LocationPermissionState
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
@@ -48,12 +51,26 @@ fun HomeScreen(
 
     if (state == null) {
         SplashScreen()
-    } else {
-       Content(
-           cs,
-           navController,
-           state
-       )
+        return
+    }
+
+    LocationPermissionHandler { permissionState, requestPermission ->
+        when (permissionState) {
+
+            LocationPermissionState.GRANTED -> {
+                Content(cs, navController, state)
+            }
+
+            LocationPermissionState.DENIED -> {
+                // First time or "ask again" — show a rationale + button
+                PermissionRationaleScreen(onRequest = requestPermission)
+            }
+
+            LocationPermissionState.PERMANENTLY_DENIED -> {
+                // User blocked it — we can only send them to Settings
+                PermissionDeniedScreen()
+            }
+        }
     }
 }
 
@@ -207,7 +224,7 @@ private fun GoalCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CircularProgressIndicator(
-                    progress = { progress.toFloat() },
+                    progress = { progress },
 
                 )
                 Spacer(
@@ -219,6 +236,56 @@ private fun GoalCard(
                     style = MaterialTheme.typography.displaySmall
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PermissionRationaleScreen(onRequest: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Korsa needs location access\nto track your runs.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = cs.onPrimary
+        )
+        Spacer(Modifier.height(Spacing.lg))
+        Button(onClick = onRequest) {
+            Text("Grant permission")
+        }
+    }
+}
+
+@Composable
+private fun PermissionDeniedScreen() {
+    val cs = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Location permission was denied.\nEnable it in Settings to use Corsa.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = cs.onPrimary
+        )
+        Spacer(Modifier.height(Spacing.lg))
+        Button(onClick = {
+            // Opens the app's system settings page
+            val intent = android.content.Intent(
+                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.fromParts("package", context.packageName, null)
+            )
+            context.startActivity(intent)
+        }) {
+            Text("Open Settings")
         }
     }
 }
