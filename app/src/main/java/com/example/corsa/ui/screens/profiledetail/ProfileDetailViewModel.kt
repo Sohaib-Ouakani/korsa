@@ -4,10 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.model.Profile
+import com.example.corsa.data.model.Run
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
-import com.example.corsa.ui.composables.RunEntry
-import com.example.corsa.ui.composables.UserRankEntry
+import com.example.corsa.ui.composables.UserEntry
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +21,8 @@ sealed interface ProfileDetailUiState {
     data class Error(val message: String) : ProfileDetailUiState
     data class Success(
         val userInfo: Profile,
-        val runs: List<RunEntry>
+        val runs: List<Run>,
+        val userEntry: UserEntry
     ) : ProfileDetailUiState
 }
 
@@ -48,24 +49,21 @@ class ProfileDetailViewModel(
             _state.value = ProfileDetailUiState.Loading
             try {
                 // coroutineScope ensures both are canceled if either throws
-                val (profile, runs) = coroutineScope {
-                    val profileDeferred = async { profilesRepository.getProfileByUserId(userId) }
-                    val runsDeferred = async { runsRepository.getRunsByUserId(userId) }
-                    Pair(profileDeferred.await(), runsDeferred.await())
+                val (profile, runs, userEntry) = coroutineScope {
+                    val profileDeferred   = async { profilesRepository.getProfileByUserId(userId) }
+                    val runsDeferred      = async { runsRepository.getRunsByUserId(userId) }
+                    val userEntryDeferred = async { profilesRepository.getUserEntryByUserId(userId) }  // 👈 parallel fetch
+                    Triple(
+                        profileDeferred.await(),
+                        runsDeferred.await(),
+                        userEntryDeferred.await()
+                    )
                 }
 
-                ProfileDetailUiState.Success(
+                _state.value = ProfileDetailUiState.Success(
                     userInfo = profile,
-                    runs = runs.map { run ->
-                        RunEntry(
-                            userId      = run.userId,
-                            displayName = profile.username,
-                            avatarUrl   = profile.avatarPath,
-                            startTime   = run.startTime.toString(),
-                            pathUrl     = null,
-                            distance    = run.distanceMeters / 1000.0
-                        )
-                    }
+                    runs = runs,
+                    userEntry = userEntry
                 )
             } catch (e: Exception) {
                 _state.value = ProfileDetailUiState.Error(

@@ -13,13 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,14 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.composables.ProfileStats
-import com.example.corsa.ui.composables.UserRankEntry
+import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,9 +60,9 @@ fun ProfileDetailScreen(
                     ProfileStats(
                         navController = navController,
                         runentries    = state.runs,
-                        infoentries   = state.userInfo,
+                        infoentries   = state.userEntry,
                         header = { ProfileHeader(
-                            userInfo      = state.userInfo,
+                            userInfo      = state.userEntry,
                             isFollowing   = isFollowing,
                             onFollowClick = viewModel::toggleFollow
                         ) }
@@ -81,7 +77,7 @@ fun ProfileDetailScreen(
 
 @Composable
 fun ProfileHeader(
-    userInfo: UserRankEntry,
+    userInfo: UserEntry,
     isFollowing: Boolean,
     onFollowClick: () -> Unit
 ) {

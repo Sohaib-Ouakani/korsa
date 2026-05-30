@@ -31,33 +31,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.corsa.data.model.Run
 import com.example.corsa.ui.screens.friends.formatFeedDate
 import com.example.corsa.ui.theme.Spacing
 
-data class RunEntry(
-    val userId: String,
-    val displayName: String,
-    val avatarUrl: String?,
-    val startTime: String,
-    val pathUrl: String?,
-    val distance: Double
-)
 
-data class UserRankEntry(
-    val userId: String,
+data class UserEntry(
     val displayName: String,
     val avatarUrl: String?,
-    val weekKm: Double,
+    val weekKm: Float,
     val level: Int,
     val completedChallenge: Int,
-    val totKn: Double
+    val totKm: Float
 )
 
 @Composable
 fun ProfileStats(
     navController: NavController,
-    runentries: List<RunEntry>,
-    infoentries: UserRankEntry,
+    runentries: List<Run>,
+    infoentries: UserEntry,
     header: @Composable () -> Unit = {},
 ) {
     LazyColumn(
@@ -75,7 +67,7 @@ fun ProfileStats(
                     StatCard("Challenge\nCompletate", infoentries.completedChallenge.toString(), modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    StatCard("Totale Km", infoentries.totKn.toString(), modifier = Modifier.weight(1f))
+                    StatCard("Totale Km", infoentries.totKm.toString(), modifier = Modifier.weight(1f))
                     StatCard("Km Settimanali", infoentries.weekKm.toString(), modifier = Modifier.weight(1f))
                 }
             }
@@ -99,13 +91,13 @@ fun ProfileStats(
 }
 
 @Composable
-fun RunCard(entry: RunEntry) {
+fun RunCard(entry: Run) {
     Card(modifier = Modifier.fillMaxWidth()) {
 
         // ── Immagine percorso (elemento principale) ───────────────────
-        if (entry.pathUrl != null) {
+        if (entry.previewPath != null) {
             AsyncImage(
-                model              = entry.pathUrl,
+                model              = entry.previewPath,
                 contentDescription = "Percorso corsa",
                 contentScale       = ContentScale.Crop,
                 modifier           = Modifier
@@ -146,7 +138,7 @@ fun RunCard(entry: RunEntry) {
 //                    style      = MaterialTheme.typography.labelLarge,
 //                )
                 Text(
-                    text  = formatFeedDate(entry.startTime),
+                    text  = formatFeedDate(entry.startTime.toString()),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -154,7 +146,7 @@ fun RunCard(entry: RunEntry) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text       = "%.2f".format(entry.distance),
+                    text       = "%.2f".format((entry.distanceMeters)/1000),
                     style      = MaterialTheme.typography.titleMedium,
                 )
                 Text(
