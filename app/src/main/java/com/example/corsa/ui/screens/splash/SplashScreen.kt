@@ -24,7 +24,7 @@ fun SplashScreen() {
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
+                imageVector = sprint,
                 contentDescription = null,
                 modifier = Modifier.size(Spacing.xxxl),
                 tint = MaterialTheme.colorScheme.primary
