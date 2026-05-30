@@ -79,6 +79,7 @@ class FollowingViewModel(
                 notFriends  = notFriends   // filled in AddFriendsScreen scope
             )
             _uiState.value = FriendUIState.Success
+            loadRanking(SortBy.Kilometers)
         } catch (e: Exception) {
             _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
         }
@@ -86,7 +87,12 @@ class FollowingViewModel(
 
     // ── Ranking ─────────────────────────────────────────────────────────────
 
-    fun loadRanking(sortBy: SortBy) {
+    fun refreshFriends() {
+        viewModelScope.launch {
+            loadFriendsProfiles()
+        }
+    }
+    suspend fun loadRanking(sortBy: SortBy) {
         viewModelScope.launch {
             try {
                 // For each friend, fetch their runs this week via RunsRepository

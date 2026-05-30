@@ -1,6 +1,7 @@
 package com.example.corsa.data.repositories
 
 import com.example.corsa.data.model.Follow
+import com.example.corsa.data.model.FollowInsert
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.model.ProfileUpdate
 import com.example.corsa.data.model.Run
@@ -29,6 +30,10 @@ interface ProfilesRepository {
     suspend fun getProfileIFollow(): List<Profile>
     suspend fun weeklyKmByUserId(userId: String): Float
     suspend fun getProfilesIDoNotFollow(): List<Profile>
+    suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean
+    suspend fun AddFollowToAProfileByUserId(userId: String)
+    suspend fun StopFollowToAProfileByUserId(userId: String)
+
 }
 
 // ── Fake implementation ────────────────────────────────────────────────────
@@ -89,6 +94,40 @@ class ProfilesRepositoryImpl(
                 }
             }
             .decodeList<Profile>()
+    }
+
+    override suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean {
+        val currentProfileId = getMyProfile().id
+
+        val follows = supabase.postgrest["follows"]
+            .select {
+                filter {
+                    eq("follower_id", currentProfileId)
+                    eq("following_id", userId)
+                }
+            }
+            .decodeList<Follow>()
+
+        return follows.isNotEmpty()
+    }
+
+    override suspend fun AddFollowToAProfileByUserId(userId: String) {
+        val currentProfileId = getMyProfile().id
+
+        supabase.postgrest["follows"]
+            .insert(FollowInsert(followerId = currentProfileId, followingId = userId))
+    }
+
+    override suspend fun StopFollowToAProfileByUserId(userId: String) {
+        val currentProfileId = getMyProfile().id
+
+        supabase.postgrest["follows"]
+            .delete {
+                filter {
+                    eq("follower_id", currentProfileId)
+                    eq("following_id", userId)
+                }
+            }
     }
 
     override suspend fun getUserEntryByUserId(userId: String): UserEntry {
@@ -177,7 +216,7 @@ class ProfilesRepositoryImpl(
         return supabase.postgrest["profiles"]
             .select {
                 filter {
-                    isIn("auth_user_id", followingIds)
+                    isIn("id", followingIds)
                 }
             }
             .decodeList<Profile>()

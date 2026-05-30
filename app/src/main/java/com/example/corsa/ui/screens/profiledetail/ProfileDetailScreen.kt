@@ -64,7 +64,7 @@ fun ProfileDetailScreen(
                         header = { ProfileHeader(
                             userInfo      = state.userEntry,
                             isFollowing   = isFollowing,
-                            onFollowClick = viewModel::toggleFollow
+                             onFollowClick = { viewModel.toggleFollow() }
                         ) }
                     )
                 }
@@ -129,7 +129,10 @@ fun ProfileHeader(
 
         // Pulsante segui
         Button(
-            onClick = onFollowClick,
+            onClick = {
+                android.util.Log.d("ProfileDetail", "Button clicked")
+                onFollowClick()
+            },
             shape   = RoundedCornerShape(50),
             colors  = if (isFollowing)
                 ButtonDefaults.buttonColors(

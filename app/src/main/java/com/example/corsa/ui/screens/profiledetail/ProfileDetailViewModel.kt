@@ -42,6 +42,7 @@ class ProfileDetailViewModel(
 
     init {
         loadProfile()
+        loadFollowState()
     }
 
     fun loadProfile() {
@@ -73,8 +74,28 @@ class ProfileDetailViewModel(
         }
     }
 
+    private fun loadFollowState() {
+        viewModelScope.launch {
+            try {
+                _isFollowing.value = profilesRepository.getIfIFollowAProfileByUserId(userId)
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileDetail", "loadFollowState failed: ${e.message}", e)
+            }
+        }
+    }
+
     fun toggleFollow() {
-        _isFollowing.update { !it }
-        // TODO: chiamata reale al repository
+        viewModelScope.launch {
+            try {
+                if (_isFollowing.value) {
+                    profilesRepository.StopFollowToAProfileByUserId(userId)
+                } else {
+                    profilesRepository.AddFollowToAProfileByUserId(userId)
+                }
+                _isFollowing.value = !_isFollowing.value
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileDetail", "toggleFollow failed: ${e.message}", e)
+            }
+        }
     }
 }

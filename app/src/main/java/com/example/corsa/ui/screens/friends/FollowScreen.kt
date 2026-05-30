@@ -58,6 +58,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.CorsaRoute
@@ -80,7 +81,12 @@ fun FollowScreen(
     var selectedTab by remember { mutableStateOf(StatsTab.Rank) }
     val tabs = StatsTab.entries
     val cs = MaterialTheme.colorScheme
-
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            viewModel.refreshFriends()
+        }
+    }
     Scaffold(
         topBar = { TopBar(navController) },
         bottomBar = { BottomBar(navController) },
