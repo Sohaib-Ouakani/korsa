@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.data.model.Run
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.screens.friends.formatFeedDate
 import com.example.corsa.ui.theme.Spacing
 
@@ -85,14 +86,16 @@ fun ProfileStats(
 
         // ── Run cards ─────────────────────────────────────────────────
         items(runentries) { entry ->
-            RunCard(entry = entry)
+            RunCard(entry = entry, navController)
         }
     }
 }
 
 @Composable
-fun RunCard(entry: Run) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun RunCard(entry: Run, navController: NavController) {
+    Card(modifier = Modifier.fillMaxWidth(),
+        onClick = { navController.navigate(CorsaRoute.RunDetailScreen(entry.id)) }
+    ) {
 
         // ── Immagine percorso (elemento principale) ───────────────────
         if (entry.previewPath != null) {
