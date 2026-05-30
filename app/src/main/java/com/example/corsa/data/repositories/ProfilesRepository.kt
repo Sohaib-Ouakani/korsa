@@ -6,7 +6,7 @@ import io.github.jan.supabase.postgrest.postgrest
 
 // ── Interface ──────────────────────────────────────────────────────────────
 interface ProfilesRepository {
-    suspend fun getProfileByUserId(userId: String): UserRankEntry?
+    suspend fun getProfileByUserId(userId: String): UserRankEntry
     suspend fun getAllProfiles(): List<UserRankEntry>
 }
 
@@ -36,27 +36,20 @@ class ProfilesRepositoryImpl(
         )
     )
 
-    override suspend fun getProfileByUserId(userId: String): UserRankEntry? {
-        return try {
-            supabase.postgrest["profiles"]
+    override suspend fun getProfileByUserId(userId: String): UserRankEntry {
+        return supabase.postgrest["profiles"]
                 .select {
                     filter {
                         eq("id", userId)
                     }
                 }
-                .decodeSingleOrNull<UserRankEntry>()
-        } catch (e: Exception) {
-            null
-        }
+                .decodeSingle<UserRankEntry>()
+
     }
 
     override suspend fun getAllProfiles(): List<UserRankEntry>  {
-        return try {
-            supabase.postgrest["profiles"]
+        return supabase.postgrest["profiles"]
                 .select()
                 .decodeList<UserRankEntry>()
-        } catch (e: Exception) {
-            emptyList()
-        }
     }
 }

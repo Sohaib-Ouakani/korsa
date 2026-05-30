@@ -8,6 +8,7 @@ import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.ui.composables.RunEntry
 import com.example.corsa.ui.composables.UserRankEntry
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,30 +46,26 @@ class ProfileDetailViewModel(
         viewModelScope.launch {
             _state.value = ProfileDetailUiState.Loading
             try {
-                // Fetch profile and runs concurrently
-                val profileDeferred = async { profilesRepository.getProfileByUserId(userId) }
-                val runsDeferred = async { runsRepository.getRunsByUserId(userId) }
-
-                val profile = profileDeferred.await()
-                val runs = runsDeferred.await()
-
-                _state.value = if (profile == null) {
-                    ProfileDetailUiState.Error("Profilo non trovato.")
-                } else {
-                    ProfileDetailUiState.Success(
-                        userInfo = profile,
-                        runs = runs.map { run ->
-                            RunEntry(
-                                userId      = run.userId,
-                                displayName = profile.displayName,
-                                avatarUrl   = profile.avatarUrl,
-                                startTime   = run.startTime.toString(),
-                                pathUrl     = null,
-                                distance    = run.distanceMeters / 1000.0
-                            )
-                        }
-                    )
+                // coroutineScope ensures both are canceled if either throws
+                val (profile, runs) = coroutineScope {
+                    val profileDeferred = async { profilesRepository.getProfileByUserId(userId) }
+                    val runsDeferred = async { runsRepository.getRunsByUserId(userId) }
+                    Pair(profileDeferred.await(), runsDeferred.await())
                 }
+
+                ProfileDetailUiState.Success(
+                    userInfo = profile,
+                    runs = runs.map { run ->
+                        RunEntry(
+                            userId      = run.userId,
+                            displayName = profile.displayName,
+                            avatarUrl   = profile.avatarUrl,
+                            startTime   = run.startTime.toString(),
+                            pathUrl     = null,
+                            distance    = run.distanceMeters / 1000.0
+                        )
+                    }
+                )
             } catch (e: Exception) {
                 _state.value = ProfileDetailUiState.Error(
                     e.message ?: "Errore sconosciuto."
