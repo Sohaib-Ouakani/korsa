@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.time.Clock
 
 data class HomeState(
     val goalKm: Float,
@@ -53,6 +54,13 @@ data class StopWatchAction(
     val stop: () -> Unit,
 )
 
+sealed class SaveState {
+    object Idle : SaveState()
+    object Saving : SaveState()
+    object Success : SaveState()
+    data class Error(val message: String) : SaveState()
+}
+
 class HomeViewModel(
     private val runsRepository: RunsRepository,
     private val profilesRepository: ProfilesRepository,
@@ -69,6 +77,8 @@ class HomeViewModel(
     // Derived from profile reactively
     private val _state = MutableStateFlow<HomeState?>(null)
     val state: StateFlow<HomeState?> = _state
+    private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
+    val saveState: StateFlow<SaveState> = _saveState
 
     init {
         loadProfile()
@@ -97,6 +107,7 @@ class HomeViewModel(
         val points: List<TrackingPoint> = emptyList(),
         val distanceMeters: Float = 0f,
         val currentPaceSecPerKm: Int = 0,   // seconds per km, 0 = not yet computable
+        val startEpochMs: Long = 0L,
     ) {
         val distanceKm: Float get() = distanceMeters / 1000f
 
@@ -122,6 +133,11 @@ class HomeViewModel(
     private fun start() {
         if (_timerState.value.isRunning) return
         _timerState.update { it.copy(isRunning = true) }
+
+        // Record start time only on the very first start (not on resume)
+        if (_runState.value.startEpochMs == 0L) {
+            _runState.update { it.copy(startEpochMs = System.currentTimeMillis()) }
+        }
         timerJob = viewModelScope.launch {
             while (currentCoroutineContext().isActive) {
                 delay(200L)                    // tick every second
@@ -177,8 +193,12 @@ class HomeViewModel(
         _timerState.update { it.copy(isRunning = false) }
     }
 
+
     private fun reset() {
         pause()
+        if (_timerState.value.elapsedTime > 30) {
+            finishRun()
+        }
         _timerState.update { current ->
             current.copy(
                 elapsedTime = 0L
@@ -187,8 +207,40 @@ class HomeViewModel(
         _runState.value = RunState()    // wipe accumulated points
     }
 
+    private fun finishRun() {
+        val userId = _profile.value?.id ?: return
+        val run    = _runState.value
+        val endMs  = Clock.System.now().toEpochMilliseconds()
+
+        if (run.points.size < 2) {
+            _saveState.value = SaveState.Error("Run too short to save")
+            return
+        }
+
+        viewModelScope.launch {
+            _saveState.value = SaveState.Saving
+            runCatching<Unit> {
+                runsRepository.saveRun(
+                    userId           = userId,
+                    startEpochMs     = run.startEpochMs,
+                    endEpochMs       = endMs,
+                    points           = run.points,
+                    distanceMeters   = run.distanceMeters,
+                    meanPaceSecPerKm = run.currentPaceSecPerKm,
+                )
+            }.onSuccess {
+                reset()
+                loadProfile()
+                _saveState.value = SaveState.Success
+            }.onFailure { e ->
+                _saveState.value = SaveState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        trackingJob?.cancel()
     }
 }

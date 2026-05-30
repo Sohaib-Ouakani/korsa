@@ -89,7 +89,7 @@ fun RunDetailScreen(
                 }
             ) { paddingValues ->
                 RunDetailMap(
-                    geoJson = state.run.path,
+                    geoJson = state.run.path.toString(),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)

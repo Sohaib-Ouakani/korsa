@@ -2,6 +2,7 @@ package com.example.corsa.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -14,8 +15,8 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     val startTime: Instant,
     @SerialName("end_time")
     val endTime: Instant,
-    @SerialName("path_geojson")
-    val path: String,
+    @SerialName("path")
+    val path: JsonElement,
     @SerialName("distance_meters")
     val distanceMeters: Float,
     @SerialName("mean_pace_seconds")
@@ -31,7 +32,7 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
 
 @Serializable
 data class RunInsert(
-     val id: String,
+//     val id: String,
      @SerialName("user_id")
      val userId: String,
      @SerialName("start_time")
@@ -46,8 +47,8 @@ data class RunInsert(
      val temperature: Float?,
      @SerialName("elevation_gain")
      val elevationGain: Float?,
-     @SerialName("created_at")
-     val createdAt: Instant,
+//     @SerialName("created_at")
+//     val createdAt: Instant,
      @SerialName("preview_path")
      val previewPath: String? = null
 )

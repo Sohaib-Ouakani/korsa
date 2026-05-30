@@ -17,6 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,12 +32,19 @@ fun StopWatchScreen(
     status: StopWatchStatus,
     navController: NavController,
     actions: StopWatchAction,
-    viewModel: HomeViewModel
+    viewModel: HomeViewModel,
+    onRunSaved: () -> Unit
 ){
     val cs = MaterialTheme.colorScheme
     val text = if (status.isRunning) "GO!" else "READY?"
     val timerState by viewModel.timerState.collectAsStateWithLifecycle()
     val runState   by viewModel.runState.collectAsStateWithLifecycle()
+    val saveState  by viewModel.saveState.collectAsStateWithLifecycle()
+
+    // Navigate home automatically when save succeeds
+    LaunchedEffect(saveState) {
+        if (saveState is SaveState.Success) onRunSaved()
+    }
 
     Column(
         modifier = Modifier
@@ -51,6 +59,13 @@ fun StopWatchScreen(
             style = MaterialTheme.typography.displayLarge
         )
         Spacer(Modifier.height(Spacing.lg))
+        if (saveState is SaveState.Error) {
+            Text(
+                text  = (saveState as SaveState.Error).message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
         // Distance
         Text(
             text  = "${"%.2f".format(runState.distanceKm)} km",
@@ -88,11 +103,12 @@ fun StopWatchScreen(
                         actions.stop()
                         navController.navigate(CorsaRoute.Home)
                     },
+                    enabled  = saveState !is SaveState.Saving,
                     modifier = Modifier.size(Size.xl)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.StopCircle,
-                        contentDescription = "Pause",
+                        contentDescription = "Stop",
                         tint = cs.onPrimary,
                         modifier = Modifier.size(Size.xl)
                     )

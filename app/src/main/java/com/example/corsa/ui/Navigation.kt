@@ -94,7 +94,10 @@ fun CorsaNavGraph(navController: NavHostController) {
                         timerState,
                         navController,
                         homeViewModel.stopWatchActions,
-                        homeViewModel
+                        homeViewModel,
+                        onRunSaved = {
+                            navController.navigate(CorsaRoute.Home)
+                        }
                     )
                 }
                 composable<CorsaRoute.StatsScreen> {
