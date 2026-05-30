@@ -27,8 +27,6 @@ class SettingsViewModel(
     private val authRepository: AuthRepository,
     private val profilesRepository: ProfilesRepository
 ) : ViewModel() {
-
-    // Separate concerns: screen data vs action state
     private val _settingsInfo = MutableStateFlow<SettingsInfo?>(null)
     val settingsInfo: StateFlow<SettingsInfo?> = _settingsInfo.asStateFlow()
 
@@ -74,7 +72,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _settingsState.value = SettingsState.Loading
             try {
-                val updatedProfile = profilesRepository.updateProfile(ProfileUpdate(username = newUsername))
+                val updatedProfile = profilesRepository.updateProfile(ProfileUpdate(username = newUsername.trim()))
                 _settingsInfo.value = _settingsInfo.value?.copy(currentUsername = updatedProfile.username)
                 _settingsState.value = SettingsState.Success
             } catch (e: Exception) {
@@ -85,26 +83,11 @@ class SettingsViewModel(
         }
     }
 
-    fun saveNewEmail(newEmail: String) {
-        viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
-            try {
-                val updatedEmail = authRepository.updateEmail(newEmail)
-                _settingsInfo.value = _settingsInfo.value?.copy(currentEmail = updatedEmail)
-                _settingsState.value = SettingsState.Success
-            } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Failed to update email"
-                )
-            }
-        }
-    }
-
     fun saveNewPassword(oldPassword: String, newPassword: String) {
         viewModelScope.launch {
             _settingsState.value = SettingsState.Loading
             try {
-                authRepository.updatePassword(oldPassword, newPassword)
+                authRepository.updatePassword(oldPassword, newPassword.trim())
                 _settingsState.value = SettingsState.Success
             } catch (e: Exception) {
                 _settingsState.value = SettingsState.Error(

@@ -112,7 +112,6 @@ fun CorsaNavGraph(navController: NavHostController) {
                         state = state,
                         onLogOut = settingsViewModel::logout,
                         onSaveNewUsername = settingsViewModel::saveNewUsername,
-                        onSaveNewEmail = settingsViewModel::saveNewEmail,
                         onSaveNewPassword = settingsViewModel::saveNewPassword,
                         onClearError = settingsViewModel::clearError,
                     )

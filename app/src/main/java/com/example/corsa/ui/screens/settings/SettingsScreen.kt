@@ -1,5 +1,8 @@
 package com.example.corsa.ui.screens.settings
 
+import android.util.Log
+import android.util.Patterns.EMAIL_ADDRESS
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,6 +19,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
@@ -23,39 +27,36 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
-    navController:     NavController,
-    settingsInfo:      SettingsInfo?,
-    state:             SettingsState,
-    onLogOut:          () -> Unit,
+    navController: NavController,
+    settingsInfo: SettingsInfo?,
+    state: SettingsState,
+    onLogOut: () -> Unit,
     onSaveNewUsername: (String) -> Unit,
-    onSaveNewEmail:    (String) -> Unit,
     onSaveNewPassword: (oldPassword: String, newPassword: String) -> Unit,
-    onClearError:      () -> Unit,
+    onClearError: () -> Unit,
 ) {
     var newUsername by remember { mutableStateOf("") }
-    var newEmail    by remember { mutableStateOf("") }
+    var newEmail by remember { mutableStateOf("") }
 
-    var newPassword            by remember { mutableStateOf("") }
-    var confirmPassword        by remember { mutableStateOf("") }
-    var newPasswordVisible     by remember { mutableStateOf(false) }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    var showReauthDialog       by remember { mutableStateOf(false) }
-    var currentPassword        by remember { mutableStateOf("") }
+    var showReauthDialog by remember { mutableStateOf(false) }
+    var currentPassword by remember { mutableStateOf("") }
     var currentPasswordVisible by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope             = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     val showSnackbar: (String) -> Unit = { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
-    // Use error.id as key so the same message can retrigger
     LaunchedEffect(state) {
         if (state is SettingsState.Error) {
             snackbarHostState.showSnackbar(state.message)
-            onClearError()
         }
     }
 
@@ -98,48 +99,35 @@ fun SettingsScreen(
             )
 
             if (settingsInfo.isEmailUser) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
-
-                EditableField(
-                    currentValue  = settingsInfo.currentEmail,
-                    newValue      = newEmail,
-                    onValueChange = { newEmail = it },
-                    label         = "Email",
-                    keyboardType  = KeyboardType.Email,
-                    onSave        = {
-                        onSaveNewEmail(newEmail)
-                        newEmail = ""
-                    },
-                )
-
                 Spacer(Modifier.height(Spacing.md))
                 SectionLabel("SICUREZZA")
                 Spacer(Modifier.height(Spacing.xs))
 
                 PasswordField(
-                    value               = newPassword,
-                    onValueChange       = { newPassword = it },
-                    label               = "Nuova password",
-                    visible             = newPasswordVisible,
-                    onToggleVisibility  = { newPasswordVisible = !newPasswordVisible },
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = "Nuova password",
+                    visible = newPasswordVisible,
+                    onToggleVisibility = { newPasswordVisible = !newPasswordVisible },
                 )
 
                 PasswordField(
-                    value               = confirmPassword,
-                    onValueChange       = { confirmPassword = it },
-                    label               = "Conferma password",
-                    visible             = confirmPasswordVisible,
-                    onToggleVisibility  = { confirmPasswordVisible = !confirmPasswordVisible },
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = "Conferma password",
+                    visible = confirmPasswordVisible,
+                    onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible },
                 )
 
                 Spacer(Modifier.height(Spacing.xs))
 
                 Button(
                     onClick = {
+                        // Password safety check
                         when {
-                            newPassword.isBlank()            -> showSnackbar("Inserisci una nuova password")
-                            newPassword.length < 8           -> showSnackbar("La password deve essere di almeno 8 caratteri")
-                            newPassword != confirmPassword   -> showSnackbar("Le password non coincidono")
+                            newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
+                            newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
+                            newPassword != confirmPassword -> showSnackbar("Le password non coincidono")
                             else -> showReauthDialog = true
                         }
                     },
@@ -151,28 +139,24 @@ fun SettingsScreen(
 
                 Spacer(Modifier.height(Spacing.xs))
 
-                Button(onClick = onLogOut) {
-                    Text("Logout")
-                }
-
                 if (showReauthDialog) {
                     ReauthDialog(
-                        currentPassword        = currentPassword,
+                        currentPassword = currentPassword,
                         currentPasswordVisible = currentPasswordVisible,
-                        onPasswordChange       = { currentPassword = it },
-                        onToggleVisibility     = { currentPasswordVisible = !currentPasswordVisible },
+                        onPasswordChange = { currentPassword = it },
+                        onToggleVisibility = { currentPasswordVisible = !currentPasswordVisible },
                         onDismiss = {
-                            showReauthDialog       = false
-                            currentPassword        = ""
+                            showReauthDialog = false
+                            currentPassword = ""
                             currentPasswordVisible = false
                         },
                         onConfirm = {
                             showReauthDialog = false
                             onSaveNewPassword(currentPassword, newPassword)
                             // Optimistically clear fields; errors surface via snackbar
-                            newPassword            = ""
-                            confirmPassword        = ""
-                            currentPassword        = ""
+                            newPassword = ""
+                            confirmPassword = ""
+                            currentPassword = ""
                             currentPasswordVisible = false
                         },
                     )
@@ -180,11 +164,25 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(Spacing.xl))
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
+
+            OutlinedButton(
+                onClick = onLogOut,
+                modifier = Modifier.fillMaxWidth().height(Spacing.xxl),
+                shape = MaterialTheme.shapes.large,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+            ) {
+                Text("Logout")
+            }
+
+            Spacer(Modifier.height(Spacing.md))
         }
     }
 }
-
-// ── Section label ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun SectionLabel(text: String) {
@@ -194,8 +192,6 @@ private fun SectionLabel(text: String) {
         color = MaterialTheme.colorScheme.primary,
     )
 }
-
-// ── Editable field ────────────────────────────────────────────────────────────
 
 @Composable
 private fun EditableField(
@@ -237,8 +233,6 @@ private fun EditableField(
         }
     }
 }
-
-// ── Password field ────────────────────────────────────────────────────────────
 
 @Composable
 private fun PasswordField(
@@ -332,8 +326,6 @@ private fun ReauthDialog(
         },
     )
 }
-
-// ── Top bar ───────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

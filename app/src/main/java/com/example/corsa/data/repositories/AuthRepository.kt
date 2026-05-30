@@ -1,5 +1,7 @@
 package com.example.corsa.data.repositories
 
+
+import android.util.Log
 import com.example.corsa.data.model.Profile
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -12,7 +14,6 @@ interface AuthRepository {
     suspend fun register(email: String, password: String)
     suspend fun logout()
     suspend fun getEmail(): String
-    suspend fun updateEmail(newEmail: String): String
     suspend fun updatePassword(oldPassword: String, newPassword: String)
     fun isEmailUser(): Boolean
     val sessionStatus: Flow<SessionStatus>
@@ -55,15 +56,6 @@ class AuthRepositoryImpl(
             ?: throw IllegalStateException("No authenticated user")
     }
 
-    override suspend fun updateEmail(newEmail: String): String {
-        requireEmailProvider()
-
-        supabase.auth.updateUser {
-            email = newEmail
-        }
-        return getEmail()
-    }
-
     override suspend fun updatePassword(oldPassword: String, newPassword: String) {
         requireEmailProvider()
 
@@ -91,7 +83,7 @@ class AuthRepositoryImpl(
         val identities = supabase.auth.currentUserOrNull()?.identities
             ?: error("User not authenticated")
 
-        val isGoogleUser = identities.any { it.provider == "google" }
-        if (isGoogleUser) error("Google accounts cannot change email or password")
+        val isEmailUser = identities.any { it.provider == "email" }
+        if (!isEmailUser) error("Only email accounts can change email or password")
     }
 }
