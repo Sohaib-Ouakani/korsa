@@ -86,7 +86,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(Spacing.xs))
 
             EditableField(
-                currentValue = settingsInfo!!.currentUsername,
+                currentValue = settingsInfo.currentUsername,
                 newValue     = newUsername,
                 onValueChange = { newUsername = it },
                 label        = "Username",
@@ -97,21 +97,21 @@ fun SettingsScreen(
                 },
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
+            if (settingsInfo.isEmailUser) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
 
-            EditableField(
-                currentValue  = settingsInfo!!.currentEmail,
-                newValue      = newEmail,
-                onValueChange = { newEmail = it },
-                label         = "Email",
-                keyboardType  = KeyboardType.Email,
-                onSave        = {
-                    onSaveNewEmail(newEmail)
-                    newEmail = ""
-                },
-            )
+                EditableField(
+                    currentValue  = settingsInfo.currentEmail,
+                    newValue      = newEmail,
+                    onValueChange = { newEmail = it },
+                    label         = "Email",
+                    keyboardType  = KeyboardType.Email,
+                    onSave        = {
+                        onSaveNewEmail(newEmail)
+                        newEmail = ""
+                    },
+                )
 
-            if (settingsInfo!!.isEmailUser) {
                 Spacer(Modifier.height(Spacing.md))
                 SectionLabel("SICUREZZA")
                 Spacer(Modifier.height(Spacing.xs))
