@@ -17,6 +17,7 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -30,6 +31,7 @@ val appModule = module {
             install(ComposeAuth) {
                 googleNativeLogin(BuildConfig.GOOGLE_CLIENT_ID)
             }
+            install(Postgrest)
         }
     }
 

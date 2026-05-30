@@ -38,7 +38,6 @@ class ProfilesRepositoryImpl(
                     }
                 }
                 .decodeSingle<Profile>()
-
     }
 
     private suspend fun weeklyKmById(userId: String): Float {
@@ -93,23 +92,33 @@ class ProfilesRepositoryImpl(
     }
 
     override suspend fun getMyProfile(): Profile {
-        val myId = supabase.auth.currentUserOrNull()?.id
-            ?: error("User not authenticated")
+        val authUserId = getMyAuthUserId()
 
-        return getProfileByUserId(myId)
+        val results = supabase.postgrest["profiles"]
+            .select {
+                filter {
+                    eq("auth_user_id", authUserId)
+                }
+            }
+            .decodeSingle<Profile>()
+
+        return results
     }
 
     override suspend fun updateProfile(update: ProfileUpdate): Profile {
-        val myId = supabase.auth.currentUserOrNull()?.id
-            ?: error("User not authenticated")
+        val authUserId = getMyAuthUserId()
 
         return supabase.postgrest["profiles"]
             .update(update) {
                 filter {
-                    eq("auth_user_id", myId)
+                    eq("auth_user_id", authUserId)
                 }
                 select()
             }
             .decodeSingle<Profile>()
+    }
+
+    private fun getMyAuthUserId(): String {
+        return supabase.auth.currentUserOrNull()?.id ?: error("User not authenticated")
     }
 }
