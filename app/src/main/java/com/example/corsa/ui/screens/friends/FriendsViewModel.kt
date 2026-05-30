@@ -2,17 +2,24 @@ package com.example.corsa.ui.screens.friends
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.corsa.data.model.Profile
+import com.example.corsa.data.repositories.ProfilesRepository
+import com.example.corsa.data.repositories.RunsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlin.collections.sortedByDescending
 
+sealed interface FriendUIState {
+    data object Loading : FriendUIState
+    data class Error(val message: String) : FriendUIState
+    data object Success : FriendUIState
+}
 
 data class UserRankEntry(
     val userId: String,
     val displayName: String,
     val avatarUrl: String?,
-    val weekKm: Double,
+    val weekKm: Float,
     val level: Int,
 )
 
@@ -26,49 +33,108 @@ data class RunFeedEntry(
 )
 
 data class SearchStatus(
-    val friendsName: List<String>,
-    val notFriends: List<String>
+    val friendsName: List<Profile>,
+    val notFriends: List<Profile>
 )
 
 enum class SortBy { Kilometers, Level }
 
-class FriendsViewModel : ViewModel() {
-    val searchStatus = SearchStatus(
-        listOf("Rossi", "Io", "Gardo", "Pelats", "Aguzzi", "Cloe"),
-        listOf("Pianini", "Moro", "Barbuto", "Baivdi", "Corteccia")
-    )
+class FriendsViewModel(
+    private val profilesRepository: ProfilesRepository,
+    private val runsRepository: RunsRepository,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<FriendUIState>(FriendUIState.Loading)
+    val uiState: StateFlow<FriendUIState> = _uiState
+
     private val _rankEntries = MutableStateFlow<List<UserRankEntry>>(emptyList())
-    private val _feedEntries = MutableStateFlow<List<RunFeedEntry>>(emptyList())
     val rankEntries: StateFlow<List<UserRankEntry>> = _rankEntries
+
+    private val _feedEntries = MutableStateFlow<List<RunFeedEntry>>(emptyList())
     val feedEntry: StateFlow<List<RunFeedEntry>> = _feedEntries
+
+    // Cached friends profiles to avoid repeated network calls
+    private var cachedFriendProfiles: List<com.example.corsa.data.model.Profile> = emptyList()
+
+    // Holds friends names for the search bar
+    private val _searchStatus = MutableStateFlow(SearchStatus(emptyList(), emptyList()))
+    val searchStatus: SearchStatus get() = _searchStatus.value
+
+    init {
+        viewModelScope.launch {
+            loadFriendsProfiles()
+        }
+    }
+
+    // ── Load & cache friends profiles once ──────────────────────────────────
+
+    private suspend fun loadFriendsProfiles() {
+        try {
+            val friends = profilesRepository.getFriendsProfile()
+            val notFriends = profilesRepository.getNotFriendsProfile()
+            cachedFriendProfiles = friends
+            _searchStatus.value = SearchStatus(
+                friendsName = friends,
+                notFriends  = notFriends   // filled in AddFriendsScreen scope
+            )
+            _uiState.value = FriendUIState.Success
+        } catch (e: Exception) {
+            _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    // ── Ranking ─────────────────────────────────────────────────────────────
+
     fun loadRanking(sortBy: SortBy) {
         viewModelScope.launch {
-            val raw = listOf(
-            UserRankEntry("1", "J. Donahue", null, 64.2, 5),
-            UserRankEntry("2", "A. Smith",   null, 58.9, 4),
-            UserRankEntry("3", "M. Tanaka",  null, 45.1, 3),
-        )   // your DB/network call
-            _rankEntries.value = when (sortBy) {
-                SortBy.Kilometers -> raw.sortedByDescending { it.weekKm }
-                SortBy.Level      -> raw.sortedByDescending { it.level }
+            try {
+                // For each friend, fetch their runs this week via RunsRepository
+                val entries = cachedFriendProfiles.map { profile ->
+                    UserRankEntry(
+                        userId      = profile.id,
+                        displayName = profile.username,
+                        avatarUrl   = profile.avatarPath,
+                        weekKm      = profilesRepository.weeklyKmById(profile.id),
+                        level       = profile.level,
+                    )
+                }
+
+                _rankEntries.value = when (sortBy) {
+                    SortBy.Kilometers -> entries.sortedByDescending { it.weekKm }
+                    SortBy.Level      -> entries.sortedByDescending { it.level }
+                }
+            } catch (e: Exception) {
+                _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
             }
         }
     }
 
+    // ── Feed ────────────────────────────────────────────────────────────────
+
     fun loadFeed() {
         viewModelScope.launch {
-            val raw = listOf(
-                RunFeedEntry("1","J. Donahue", null, "2026-05-26T10:30:00+02:00", null, 5.4 )
-            )
-//                  supabase
-//                .from("runs")
-//                .select() {
-//                    // se vuoi filtrare solo le run degli amici:
-//                    // filter { eq("user_id", currentUserId) }
-//                }
-//                .decodeList<RunFeedEntry>()
+            try {
+                // Build a name+avatar lookup so we don't hit the DB per run
+                val profileById = cachedFriendProfiles.associateBy { it.authUserId }
 
-            _feedEntries.value = raw.sortedByDescending { it.startTime }
+                val allRuns = cachedFriendProfiles.flatMap { profile ->
+                    runsRepository.getRunsByUserId(profile.authUserId).map { run ->
+                        val owner = profileById[profile.authUserId]
+                        RunFeedEntry(
+                            userId      = profile.id,
+                            displayName = owner?.username ?: profile.username,
+                            avatarUrl   = owner?.avatarPath,
+                            startTime   = run.startTime.toString(),
+                            pathUrl     = run.previewPath,
+                            distance    = run.distanceMeters.toDouble() / 1000.0,
+                        )
+                    }
+                }
+
+                _feedEntries.value = allRuns.sortedByDescending { it.startTime }
+            } catch (e: Exception) {
+                _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
+            }
         }
     }
 }

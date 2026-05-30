@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
@@ -43,7 +44,7 @@ fun AddFriendsScreen(
             if (query.isBlank()) {
                 viewModel.searchStatus.notFriends
             } else {
-                viewModel.searchStatus.notFriends.filter { it.contains(query, ignoreCase = true) }
+                viewModel.searchStatus.notFriends.filter { it.username.contains(query, ignoreCase = true) }
             }
         )
     }
@@ -61,7 +62,7 @@ fun AddFriendsScreen(
         ) {
 
             // ── Search bar ────────────────────────────────────────────────
-            SearchBar(viewModel)
+            SearchBar(viewModel, navController)
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -90,14 +91,14 @@ fun AddFriendsScreen(
 // ── Search bar component ──────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(viewModel: FriendsViewModel) {
+fun SearchBar(viewModel: FriendsViewModel, navController: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val suggested = viewModel.searchStatus.notFriends
     val filteredSuggested = if (query.isBlank()) {
         suggested
     } else {
-        suggested.filter { it.contains(query, ignoreCase = true) }
+        suggested.filter { it.username.contains(query, ignoreCase = true) }
     }
 
     LaunchedEffect(query) {
@@ -154,13 +155,14 @@ fun SearchBar(viewModel: FriendsViewModel) {
             if (filteredSuggested.isNotEmpty()) {
                 filteredSuggested.forEach { friend ->
                     ListItem(
-                        headlineContent = { Text(friend) },
+                        headlineContent = { Text(friend.username) },
                         colors = ListItemDefaults.colors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
                         modifier = Modifier
                             .clickable {
-                            query = friend
+                            query = friend.username
+                            navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
                             expanded = false
                         },
                     )

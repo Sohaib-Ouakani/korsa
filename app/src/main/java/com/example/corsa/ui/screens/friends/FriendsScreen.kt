@@ -108,7 +108,7 @@ fun FriendsScreen(
 //            )
             // ── Search bar  ────────────────────────────────────────────────
             //TODO
-            FriendSearchBar(viewModel)
+            FriendSearchBar(viewModel, navController)
             // ── Primary Row  ────────────────────────────────────────────────
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
                 tabs.forEach { tab ->
@@ -249,14 +249,14 @@ fun FeedCard(entry: RunFeedEntry) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendSearchBar(viewModel: FriendsViewModel) {
+fun FriendSearchBar(viewModel: FriendsViewModel, navController: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val allFriends = viewModel.searchStatus.friendsName
     val filteredFriends = if (query.isBlank()) {
         emptyList()
     } else {
-        allFriends.filter { it.contains(query, ignoreCase = true) }
+        allFriends.filter { it.username.contains(query, ignoreCase = true) }
     }
 
     LaunchedEffect(query) {
@@ -313,13 +313,13 @@ fun FriendSearchBar(viewModel: FriendsViewModel) {
             if (filteredFriends.isNotEmpty()) {
                 filteredFriends.forEach { friend ->
                     ListItem(
-                        headlineContent = { Text(friend) },
+                        headlineContent = { Text(friend.username) },
                         colors = ListItemDefaults.colors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
                         modifier = Modifier.clickable {
-
-                            query = friend
+                            query = friend.username
+                            navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
                             expanded = false
                         }
                     )
@@ -496,9 +496,9 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy) {
 @Composable
 fun RankListPreview() {
     val fakeEntries = listOf(
-        UserRankEntry("1", "J. Donahue", null, 64.2, 5),
-        UserRankEntry("2", "A. Smith",   null, 58.9, 4),
-        UserRankEntry("3", "M. Tanaka",  null, 45.1, 3),
+        UserRankEntry("1", "J. Donahue", null, 64.2f, 5),
+        UserRankEntry("2", "A. Smith",   null, 58.9f, 4),
+        UserRankEntry("3", "M. Tanaka",  null, 45.1f, 3),
     )
 
     CorsaTheme {
