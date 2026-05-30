@@ -14,7 +14,8 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     val startTime: Instant,
     @SerialName("end_time")
     val endTime: Instant,
-    val path: String,           // GeoJSON LineString from ST_AsGeoJSON
+    @SerialName("path_geojson")
+    val path: String,
     @SerialName("distance_meters")
     val distanceMeters: Float,
     @SerialName("mean_pace_seconds")

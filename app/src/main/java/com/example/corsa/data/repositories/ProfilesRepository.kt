@@ -23,6 +23,7 @@ interface ProfilesRepository {
     suspend fun getAllProfiles(): List<Profile>
     suspend fun getMyProfile(): Profile
     suspend fun updateProfile(update: ProfileUpdate): Profile
+    suspend fun getMyUserEntry(): UserEntry
 }
 
 // ── Fake implementation ────────────────────────────────────────────────────
@@ -66,14 +67,14 @@ class ProfilesRepositoryImpl(
         val profile = supabase.postgrest["profiles"]
             .select {
                 filter {
-                    eq("id", userId)
+                    eq("auth_user_id", userId)
                 }
             }
             .decodeSingle<Profile>()
 
-        val weeklyKm = weeklyKmById(userId)
+        val weeklyKm = weeklyKmById(profile.id)
 
-        val userEntry = UserEntry(
+        return UserEntry(
             profile.username,
             profile.avatarPath,
             weeklyKm,
@@ -81,8 +82,6 @@ class ProfilesRepositoryImpl(
             profile.completedChallenges,
             profile.totalKm,
         )
-
-        return userEntry
     }
 
     override suspend fun getAllProfiles(): List<Profile>  {
@@ -120,5 +119,12 @@ class ProfilesRepositoryImpl(
 
     private fun getMyAuthUserId(): String {
         return supabase.auth.currentUserOrNull()?.id ?: error("User not authenticated")
+    }
+
+    override suspend fun getMyUserEntry(): UserEntry {
+        val myId = supabase.auth.currentUserOrNull()?.id
+            ?: error("User not authenticated")
+
+        return getUserEntryByUserId(myId)
     }
 }
