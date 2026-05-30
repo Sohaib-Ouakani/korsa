@@ -1,7 +1,7 @@
 package com.example.corsa.data.repositories
 
 import com.example.corsa.data.model.Profile
-import com.example.corsa.ui.composables.UserRankEntry
+import com.example.corsa.ui.composables.UserEntry
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -19,7 +19,7 @@ class ProfilesRepositoryImpl(
 ) : ProfilesRepository {
 
     private val fakeProfiles = listOf(
-        UserRankEntry(
+        UserEntry(
             userId             = "1",
             displayName        = "J. Donahue",
             avatarUrl          = null,
@@ -28,7 +28,7 @@ class ProfilesRepositoryImpl(
             completedChallenge = 8,
             totKn              = 48.3
         ),
-        UserRankEntry(
+        UserEntry(
             userId             = "user-abc",
             displayName        = "M. Rossi",
             avatarUrl          = null,

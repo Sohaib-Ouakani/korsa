@@ -24,7 +24,7 @@ import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.RunEntry
 import com.example.corsa.ui.composables.TopBar
-import com.example.corsa.ui.composables.UserRankEntry
+import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 
@@ -37,7 +37,7 @@ fun StatsScreen(navController: NavController) {
         RunEntry("1", "J. Donahue", null, "2026-05-26T10:30:00+02:00", null, 5.4),
         RunEntry("2", "P. Aolo", null, "2026-05-26T10:30:00+02:00", null, 7.4)
     )
-    val infoentries = UserRankEntry("1", "J. Donahue", null, 69.0, 7, 8, 48.3)
+    val infoentries = UserEntry("1", "J. Donahue", null, 69.0, 7, 8, 48.3)
 
     Scaffold(
         topBar = { TopBar(navController) },
@@ -55,7 +55,7 @@ fun StatsScreen(navController: NavController) {
 
 @Composable
 private fun ProfileHeader(
-    infoentries: UserRankEntry,
+    infoentries: UserEntry,
     cs: ColorScheme
 ) {
     Row(

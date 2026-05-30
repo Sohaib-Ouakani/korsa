@@ -43,7 +43,7 @@ data class RunEntry(
     val distance: Double
 )
 
-data class UserRankEntry(
+data class UserEntry(
     val userId: String,
     val displayName: String,
     val avatarUrl: String?,
@@ -57,7 +57,7 @@ data class UserRankEntry(
 fun ProfileStats(
     navController: NavController,
     runentries: List<RunEntry>,
-    infoentries: UserRankEntry,
+    infoentries: UserEntry,
     header: @Composable () -> Unit = {},
 ) {
     LazyColumn(

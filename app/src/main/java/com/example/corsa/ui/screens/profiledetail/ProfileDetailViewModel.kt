@@ -7,7 +7,6 @@ import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.ui.composables.RunEntry
-import com.example.corsa.ui.composables.UserRankEntry
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
