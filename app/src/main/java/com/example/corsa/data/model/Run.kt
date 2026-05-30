@@ -6,7 +6,7 @@ import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
-data class Runs @OptIn(ExperimentalUuidApi::class) constructor(
+data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     val id: String,
     @SerialName("user_id")
     val userId: String,
@@ -29,7 +29,7 @@ data class Runs @OptIn(ExperimentalUuidApi::class) constructor(
 )
 
 @Serializable
-data class RunsInsert(
+data class RunInsert(
      val id: String,
      @SerialName("user_id")
      val userId: String,

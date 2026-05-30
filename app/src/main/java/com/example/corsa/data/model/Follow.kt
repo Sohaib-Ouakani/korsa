@@ -4,10 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Serializable
-data class Follows @OptIn(ExperimentalUuidApi::class) constructor(
+data class Follow @OptIn(ExperimentalUuidApi::class) constructor(
     val id: String,
     @SerialName("follower_id")
     val followerId: String,
@@ -18,7 +17,7 @@ data class Follows @OptIn(ExperimentalUuidApi::class) constructor(
 )
 
 @Serializable
-data class FollowsInsert(
+data class FollowInsert(
     @SerialName("follower_id")
     val followerId: String,
 

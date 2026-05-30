@@ -4,10 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Serializable
-data class Likes @OptIn(ExperimentalUuidApi::class) constructor(
+data class Like @OptIn(ExperimentalUuidApi::class) constructor(
     val id: String,
     @SerialName("run_id")
     val runId: String,

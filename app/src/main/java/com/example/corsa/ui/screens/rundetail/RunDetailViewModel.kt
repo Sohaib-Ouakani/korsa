@@ -3,7 +3,7 @@ package com.example.corsa.ui.screens.rundetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.corsa.data.model.Runs
+import com.example.corsa.data.model.Run
 import com.example.corsa.data.repositories.RunsRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ sealed interface RunDetailUiState {
     data object Loading : RunDetailUiState
     data class Error(val message: String) : RunDetailUiState
     data class Success(
-        val run: Runs,
+        val run: Run,
         val isMapExpanded: Boolean = false   // bottom sheet peek vs hidden
     ) : RunDetailUiState
 }

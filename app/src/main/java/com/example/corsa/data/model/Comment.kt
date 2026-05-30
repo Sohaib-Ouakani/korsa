@@ -4,10 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Serializable
-data class Comments @OptIn(ExperimentalUuidApi::class) constructor(
+data class Comment @OptIn(ExperimentalUuidApi::class) constructor(
     val id: String,
     @SerialName("run_id")
     val runId: String,
@@ -20,7 +19,7 @@ data class Comments @OptIn(ExperimentalUuidApi::class) constructor(
     val updatedAt: Instant,
 )
 @Serializable
-data class CommentsInsert(
+data class CommentInsert(
     @SerialName("run_id")
     val runId: String,
 

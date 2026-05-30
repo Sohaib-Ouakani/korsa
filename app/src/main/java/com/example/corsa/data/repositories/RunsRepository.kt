@@ -1,13 +1,13 @@
 package com.example.corsa.data.repositories
 
-import com.example.corsa.data.model.Runs
+import com.example.corsa.data.model.Run
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 // ── Interface (what the ViewModel depends on) ──────────────────────────────
 interface RunsRepository {
-    fun getRunById(id: String): Flow<Runs?>
-    fun getRunsByUser(userId: String): Flow<List<Runs>>
+    fun getRunById(id: String): Flow<Run?>
+    fun getRunsByUser(userId: String): Flow<List<Run>>
 }
 
 // ── Fake implementation (no real Supabase yet) ─────────────────────────────
@@ -38,13 +38,13 @@ class FakeRunsRepository : RunsRepository {
     }
 """.trimIndent()
 
-    private val fakeRuns = listOf<Runs>()
+    private val fakeRuns = listOf<Run>()
 
-    override fun getRunById(id: String): Flow<Runs?> = flow {
+    override fun getRunById(id: String): Flow<Run?> = flow {
         emit(fakeRuns.firstOrNull { it.id == id })
     }
 
-    override fun getRunsByUser(userId: String): Flow<List<Runs>> = flow {
+    override fun getRunsByUser(userId: String): Flow<List<Run>> = flow {
         emit(fakeRuns.filter { it.userId == userId })
     }
 }

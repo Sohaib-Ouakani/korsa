@@ -340,7 +340,7 @@ fun UserDateRow(
 // ── Stat cards ────────────────────────────────────────────────────────────
 
 @Composable
-fun StatCardsGrid(run: com.example.corsa.data.model.Runs) {
+fun StatCardsGrid(run: com.example.corsa.data.model.Run) {
     // Build the list dynamically so optional stats appear only when present
     val stats = buildList {
         add("Distance"  to formatDistance(run.distanceMeters))
