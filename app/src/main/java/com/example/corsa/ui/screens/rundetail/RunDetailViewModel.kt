@@ -42,7 +42,7 @@ class RunDetailViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _runId: String? = checkNotNull(savedStateHandle["runId"])
+    private val _runId: String? = savedStateHandle["runId"]
     private val _shareToken: String? = savedStateHandle["shareToken"]
 
     private val _runDetailState = MutableStateFlow<RunDetailState>(RunDetailState.Loading)

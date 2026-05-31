@@ -44,6 +44,7 @@ sealed interface CorsaRoute {
     @Serializable data class ProfileDetailScreen(val userId: String) : CorsaRoute
 
     @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
+    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute  // ← add this
 }
 
 @Composable
@@ -124,6 +125,16 @@ fun CorsaNavGraph(navController: NavHostController) {
                     )
                 }
                 composable<CorsaRoute.RunDetailScreen> {
+                    val runDetailViewModel = koinViewModel<RunDetailViewModel>()
+                    val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
+                    RunDetailScreen(
+                        navController = navController,
+                        state = state,
+                        toggleLike = runDetailViewModel::toggleLike,
+                        onAddComment = runDetailViewModel::onAddComment
+                    )
+                }
+                composable<CorsaRoute.SharedRunScreen> {
                     val runDetailViewModel = koinViewModel<RunDetailViewModel>()
                     val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
                     RunDetailScreen(
