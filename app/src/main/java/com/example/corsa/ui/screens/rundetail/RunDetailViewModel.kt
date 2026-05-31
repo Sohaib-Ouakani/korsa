@@ -42,7 +42,8 @@ class RunDetailViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _runId: String = checkNotNull(savedStateHandle["runId"])
+    private val _runId: String? = checkNotNull(savedStateHandle["runId"])
+    private val _shareToken: String? = savedStateHandle["shareToken"]
 
     private val _runDetailState = MutableStateFlow<RunDetailState>(RunDetailState.Loading)
     val runDetailState = _runDetailState.asStateFlow()
@@ -55,10 +56,14 @@ class RunDetailViewModel(
         viewModelScope.launch {
             _runDetailState.value = RunDetailState.Loading
             try {
-                val run = runRepository.getRunById(_runId)
-                val comments = runRepository.getCommentsById(_runId)
-                val likeCount = runRepository.getLikeCountById(_runId)
-                val alreadyLiked = runRepository.isLikedByMeById(_runId)
+                val run = when {
+                    _runId != null -> runRepository.getRunById(_runId)
+                    _shareToken != null -> runRepository.getRunByShareToken(_shareToken)
+                    else -> error("No runId or shareToken provided")
+                }
+                val comments = runRepository.getCommentsById(run.id)
+                val likeCount = runRepository.getLikeCountById(run.id)
+                val alreadyLiked = runRepository.isLikedByMeById(run.id)
                 val runnerProfile = profileRepository.getProfileByUserId(run.userId)
                 val myUserId = profileRepository.getMyProfile().id
                 _runDetailState.value = RunDetailState.Success(
@@ -82,6 +87,7 @@ class RunDetailViewModel(
 
         // Optimistic update
         val wasLiked = currentState.alreadyLiked
+        val runId = currentState.run.id
         _runDetailState.value = currentState.copy(
             alreadyLiked = !wasLiked,
             likeCount = if (wasLiked) currentState.likeCount - 1 else currentState.likeCount + 1
@@ -90,9 +96,9 @@ class RunDetailViewModel(
         viewModelScope.launch {
             try {
                 if (wasLiked) {
-                    runRepository.removeLikeFromARun(_runId)
+                    runRepository.removeLikeFromARun(runId)
                 } else {
-                    runRepository.addLikeToARun(_runId)
+                    runRepository.addLikeToARun(runId)
                 }
             } catch (e: Exception) {
                 // Rollback
@@ -105,10 +111,13 @@ class RunDetailViewModel(
     }
 
     fun onAddComment(content: String) {
+        val currentState = _runDetailState.value as? RunDetailState.Success ?: return
+        val runId = currentState.run.id  // ← same here
+
         viewModelScope.launch {
             try {
-                runRepository.addCommentToARun(_runId, content)
-                val comments = runRepository.getCommentsById(_runId)  // re-fetch
+                runRepository.addCommentToARun(runId, content)
+                val comments = runRepository.getCommentsById(runId)  // re-fetch
                 val currentState = _runDetailState.value
                 if (currentState is RunDetailState.Success) {
                     _runDetailState.value = currentState.copy(comments = comments)
