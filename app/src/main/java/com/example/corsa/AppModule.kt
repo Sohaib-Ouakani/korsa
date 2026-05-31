@@ -48,6 +48,6 @@ val appModule = module {
     viewModel { AuthViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { FollowingViewModel(get(), get() ) }
-    viewModel { params -> RunDetailViewModel(get(), params.get()) }
+    viewModel { params -> RunDetailViewModel(get(), get(),params.get()) }
     viewModel { ProfileDetailViewModel(get(), get(), get()) }
 }

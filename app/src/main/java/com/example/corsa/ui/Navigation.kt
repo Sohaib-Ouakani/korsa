@@ -112,7 +112,7 @@ fun CorsaNavGraph(navController: NavHostController) {
                 composable<CorsaRoute.SettingsScreen> {
                     val settingsViewModel = koinViewModel<SettingsViewModel>()
                     val settingsInfo by settingsViewModel.settingsInfo.collectAsStateWithLifecycle()
-                    val state        by settingsViewModel.settingsState.collectAsStateWithLifecycle()
+                    val state by settingsViewModel.settingsState.collectAsStateWithLifecycle()
                     SettingsScreen(
                         navController = navController,
                         settingsInfo = settingsInfo,
@@ -124,8 +124,14 @@ fun CorsaNavGraph(navController: NavHostController) {
                     )
                 }
                 composable<CorsaRoute.RunDetailScreen> {
-                    val viewModel = koinViewModel<RunDetailViewModel>()
-                    RunDetailScreen(navController = navController, viewModel = viewModel)
+                    val runDetailViewModel = koinViewModel<RunDetailViewModel>()
+                    val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
+                    RunDetailScreen(
+                        navController = navController,
+                        state = state,
+                        toggleLike = runDetailViewModel::toggleLike,
+                        onAddComment = runDetailViewModel::onAddComment
+                    )
                 }
                 composable<CorsaRoute.ProfileDetailScreen> {
                     val viewModel = koinViewModel<ProfileDetailViewModel>()

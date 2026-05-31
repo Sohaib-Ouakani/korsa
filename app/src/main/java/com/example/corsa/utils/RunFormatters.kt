@@ -1,7 +1,8 @@
 package com.example.corsa.utils
 
-import java.time.Duration
+
 import java.time.ZonedDateTime
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 /**
@@ -28,10 +29,14 @@ fun formatDistance(meters: Float): String {
  * Duration between start and end -> "1h 12m" or "43m"
  */
 fun formatDuration(startTime: Instant, endTime: Instant): String {
-//    val totalMinutes = Duration.between(startTime, endTime).toMinutes()
-//    val hours = totalMinutes / 60
-//    val minutes = totalMinutes % 60
-//    return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
-    //TODO: change this shit
-    return "Mi ammazzerò presto -- cambia sta roba"
+    val duration = endTime - startTime
+    val totalMinutes = duration.inWholeMinutes
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+
+    return if (hours > 0) {
+        "${hours}h ${minutes}m"
+    } else {
+        "${minutes}m"
+    }
 }

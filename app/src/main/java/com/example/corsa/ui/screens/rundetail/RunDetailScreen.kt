@@ -2,12 +2,15 @@ package com.example.corsa.ui.screens.rundetail
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
@@ -17,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.theme.Spacing
@@ -28,6 +30,7 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -40,40 +43,36 @@ import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
 import androidx.core.graphics.toColorInt
+import com.example.corsa.data.model.Profile
+import com.example.corsa.data.model.Run
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.utils.latLngs
 import com.example.corsa.utils.parseRunGeoJson
-
 
 private const val ROUTE_SOURCE_ID = "run-route-source"
 private const val ROUTE_LAYER_ID  = "run-route-layer"
 private const val MAP_STYLE_URL   = "https://tiles.openfreemap.org/styles/liberty"
-
-// ── Fake comment model (replace with real data class later) ───────────────
-data class Comment(
-    val id: String,
-    val authorName: String,
-    val text: String,
-    val timestamp: String
-)
+private const val ROUTE_COLOR     = "#FF4500"   // orange-red
+private const val ROUTE_WIDTH     = 5f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RunDetailScreen(
     navController: NavController,
-    viewModel: RunDetailViewModel
+    state: RunDetailState,
+    toggleLike: () -> Unit,
+    onAddComment: (String) -> Unit
 ) {
-    val uiState by viewModel.state.collectAsStateWithLifecycle()
-
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
 
-    when (val state = uiState) {
-        is RunDetailUiState.Loading -> RunDetailLoading()
-        is RunDetailUiState.Error   -> RunDetailError(message = state.message)
-        is RunDetailUiState.Success -> {
+    when (val state = state) {
+        is RunDetailState.Loading -> RunDetailLoading()
+        is RunDetailState.Error -> RunDetailError(message = state.message)
+        is RunDetailState.Success -> {
             BottomSheetScaffold(
                 scaffoldState = sheetState,
                 topBar = { BackTopBar(navController = navController) },
@@ -82,9 +81,21 @@ fun RunDetailScreen(
                 sheetContainerColor = MaterialTheme.colorScheme.surface,
                 sheetContent = {
                     RunDetailSheetContent(
-                        state = state,
+                        run = state.run,
+                        comments = state.comments,
+                        likeCount = state.likeCount,
+                        runnerProfile = state.runnerProfile,
+                        onProfileNavigation = { userId ->
+                            if (userId == state.myUserId) {
+                                navController.navigate(CorsaRoute.StatsScreen)
+                            } else {
+                                navController.navigate(CorsaRoute.ProfileDetailScreen(userId))
+                            }
+                        },
+                        toggleLike = toggleLike,
+                        alreadyLiked = state.alreadyLiked,
+                        onAddComment = onAddComment,
                         spacing = Spacing.md,
-                        navController = navController
                     )
                 }
             ) { paddingValues ->
@@ -98,32 +109,6 @@ fun RunDetailScreen(
         }
     }
 }
-
-// ── Map ───────────────────────────────────────────────────────────────────
-
-//@Composable
-//fun RunDetailMap(
-//    geoJson: String,
-//    modifier: Modifier = Modifier
-//) {
-//    // TODO: replace Box with MapLibre MapboxMap composable and draw
-//    //       the route using geoJsonToLineString(geoJson) as a LineLayer.
-//
-//    Box(
-//        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
-//        contentAlignment = Alignment.Center
-//    ) {
-//        Text(
-//            text = "Map placeholder",
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = MaterialTheme.colorScheme.onSurfaceVariant
-//        )
-//    }
-//}
-
-// ── Map ───────────────────────────────────────────────────────────────────
-private const val ROUTE_COLOR     = "#FF4500"   // vivid orange-red — easy to spot on any basemap
-private const val ROUTE_WIDTH     = 5f
 
 @Composable
 fun RunDetailMap(
@@ -217,24 +202,18 @@ fun RunDetailMap(
     )
 }
 
-// ── Bottom sheet content ──────────────────────────────────────────────────
-
 @Composable
 fun RunDetailSheetContent(
-    state: RunDetailUiState.Success,
-    spacing: androidx.compose.ui.unit.Dp,
-    navController: NavController
+    run: Run,
+    runnerProfile: Profile,
+    likeCount: Int,
+    comments: List<CommentEntry>,
+    spacing: Dp,
+    onProfileNavigation: (userId: String) -> Unit,
+    toggleLike: () -> Unit,
+    onAddComment: (String) -> Unit,
+    alreadyLiked: Boolean
 ) {
-    val run = state.run
-
-    // Fake data — replace with real repo data later
-    val fakeComments = listOf(
-        Comment("1", "Alice", "Great pace on that last km!", "2h ago"),
-        Comment("2", "Marco", "Bella corsa! 🔥", "3h ago"),
-        Comment("3", "Sara",  "Keep it up!", "5h ago")
-    )
-    val fakeLikes = 14
-
     LazyColumn(
         contentPadding = PaddingValues(
             start = spacing,
@@ -245,47 +224,45 @@ fun RunDetailSheetContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
 
-        // ── User row + date ───────────────────────────────────────────────
         item {
             UserDateRow(
-                userId = run.userId,
+                runnerProfile = runnerProfile,
                 startTime = run.startTime.toString(),
-                navController = navController
+                onProfileNavigation = onProfileNavigation
             )
         }
 
-        // ── Stat cards ────────────────────────────────────────────────────
         item {
             StatCardsGrid(run = run)
         }
 
-        // ── Likes + comments label ────────────────────────────────────────
         item {
             LikesCommentsRow(
-                likeCount = fakeLikes,
-                commentCount = fakeComments.size
+                likeCount = likeCount,
+                commentCount = comments.size,
+                toggleLike = toggleLike,
+                alreadyLiked = alreadyLiked
             )
         }
 
-        // ── Comment divider ───────────────────────────────────────────────
         item {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            AddCommentRow(
+                onAddComment = onAddComment,
+                modifier = Modifier.padding(top = Spacing.sm)
+            )
         }
 
-        // ── Comments ──────────────────────────────────────────────────────
-        items(fakeComments, key = { it.id }) { comment ->
-            CommentItem(comment = comment)
+        items(comments, key = { it.commentId }) { comment ->
+            CommentItem(comment, onProfileNavigation)
         }
     }
 }
 
-// ── User + date row ───────────────────────────────────────────────────────
-
 @Composable
 fun UserDateRow(
-    userId: String,
+    runnerProfile: Profile,
     startTime: String,
-    navController: NavController
+    onProfileNavigation: (String) -> Unit
 ) {
     val dateLabel = startTime.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
 
@@ -294,7 +271,6 @@ fun UserDateRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Avatar placeholder — TODO: load real avatar via Coil
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -312,8 +288,7 @@ fun UserDateRow(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                // TODO: replace userId with real username from profiles table
-                text = userId.take(8) + "…",
+                text = runnerProfile.username.take(8) + "…",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -325,9 +300,7 @@ fun UserDateRow(
             )
         }
 
-        // TODO: navigate to profile screen if userId != currentUserId,
-        //       otherwise navigate to stats screen
-        TextButton(onClick = { /* TODO navController.navigate(...) */ }) {
+        TextButton(onClick = { onProfileNavigation(runnerProfile.id) } ) {
             Text(
                 text = "Profile",
                 style = MaterialTheme.typography.labelMedium,
@@ -337,10 +310,8 @@ fun UserDateRow(
     }
 }
 
-// ── Stat cards ────────────────────────────────────────────────────────────
-
 @Composable
-fun StatCardsGrid(run: com.example.corsa.data.model.Run) {
+fun StatCardsGrid(run: Run) {
     // Build the list dynamically so optional stats appear only when present
     val stats = buildList {
         add("Distance"  to formatDistance(run.distanceMeters))
@@ -406,10 +377,13 @@ fun StatCard(
     }
 }
 
-// ── Likes + comments label row ────────────────────────────────────────────
-
 @Composable
-fun LikesCommentsRow(likeCount: Int, commentCount: Int) {
+fun LikesCommentsRow(
+    likeCount: Int,
+    commentCount: Int,
+    toggleLike: () -> Unit,
+    alreadyLiked: Boolean
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -424,12 +398,16 @@ fun LikesCommentsRow(likeCount: Int, commentCount: Int) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
         ) {
-            Icon(
-                imageVector = Icons.Outlined.FavoriteBorder,
-                contentDescription = "Likes",
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(16.dp)
-            )
+            IconButton(
+                onClick = toggleLike,
+            ) {
+                Icon(
+                    imageVector = if (alreadyLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Likes",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
             Text(
                 text = "$likeCount",
                 style = MaterialTheme.typography.labelMedium,
@@ -439,23 +417,74 @@ fun LikesCommentsRow(likeCount: Int, commentCount: Int) {
     }
 }
 
-// ── Comment item ──────────────────────────────────────────────────────────
+@Composable
+fun AddCommentRow(
+    onAddComment: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var text by remember { mutableStateOf("") }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            placeholder = {
+                Text(
+                    text = "Add a comment…",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(20.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodySmall
+        )
+
+        IconButton(
+            onClick = {
+                val trimmed = text.trim()
+                if (trimmed.isNotEmpty()) {
+                    onAddComment(trimmed)
+                    text = ""
+                }
+            },
+            enabled = text.isNotBlank()
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Send,
+                contentDescription = "Post comment",
+                tint = if (text.isNotBlank())
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
 
 @Composable
-fun CommentItem(comment: Comment) {
+fun CommentItem(
+    comment: CommentEntry,
+    onProfileNavigation: (String) -> Unit
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         modifier = Modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(Spacing.xl)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .clickable { onProfileNavigation(comment.authorId) },
+            contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = comment.authorName.first().uppercase(),
+                text = comment.authorUsername.first().uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 fontWeight = FontWeight.Bold
@@ -471,19 +500,19 @@ fun CommentItem(comment: Comment) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = comment.authorName,
+                    text = comment.authorUsername,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = comment.timestamp,
+                    text = comment.commentCreatedAt.toString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = comment.text,
+                text = comment.commentContent,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -491,7 +520,6 @@ fun CommentItem(comment: Comment) {
     }
 }
 
-// ── Loading / Error states ────────────────────────────────────────────────
 
 @Composable
 fun RunDetailLoading() {

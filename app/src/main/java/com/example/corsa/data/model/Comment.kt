@@ -1,5 +1,6 @@
 package com.example.corsa.data.model
 
+import com.example.corsa.ui.screens.rundetail.CommentEntry
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
@@ -28,3 +29,4 @@ data class CommentInsert(
 
     val content: String,
 )
+
