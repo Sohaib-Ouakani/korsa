@@ -1,6 +1,7 @@
 package com.example.corsa.ui.screens.home
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.location.LocationProvider
@@ -101,7 +102,7 @@ class HomeViewModel(
     }
     // ── Run tracking state ───────────────────────────────────────────────────────
 
-    data class TrackingPoint(val lat: Double, val lng: Double)
+    data class TrackingPoint(val lat: Double, val lng: Double, val altitude: Double? = null)
 
     data class RunState(
         val points: List<TrackingPoint> = emptyList(),
@@ -153,7 +154,10 @@ class HomeViewModel(
         trackingJob = viewModelScope.launch {
             locationProvider.locationFlow(intervalMs = 3000L)
                 .collect { location ->
-                    val newPoint = TrackingPoint(location.latitude, location.longitude)
+                    val newPoint = TrackingPoint(
+                        location.latitude,
+                        location.longitude,
+                        if (location.hasAltitude()) location.altitude else null)
                     _runState.update { current ->
                         val updatedPoints = current.points + newPoint
 
