@@ -139,15 +139,8 @@ fun FollowScreen(
 
 @Composable
 fun Feed(viewModel: FollowingViewModel) {
-    LaunchedEffect(Unit) {
-        viewModel.loadFeed()
-    }
     val entries by viewModel.feedEntry.collectAsStateWithLifecycle()
-    Column {
-        FeedList(
-            entries = entries,
-        )
-    }
+    FeedList(entries = entries)
 }
 
 
