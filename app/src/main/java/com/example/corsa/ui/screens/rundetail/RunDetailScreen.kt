@@ -46,6 +46,7 @@ import androidx.core.graphics.toColorInt
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.model.Run
 import com.example.corsa.ui.CorsaRoute
+import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.utils.latLngs
 import com.example.corsa.utils.parseRunGeoJson
 
@@ -70,7 +71,7 @@ fun RunDetailScreen(
     )
 
     when (val state = state) {
-        is RunDetailState.Loading -> RunDetailLoading()
+        is RunDetailState.Loading -> SplashScreen()
         is RunDetailState.Error -> RunDetailError(message = state.message)
         is RunDetailState.Success -> {
             BottomSheetScaffold(
@@ -517,14 +518,6 @@ fun CommentItem(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-    }
-}
-
-
-@Composable
-fun RunDetailLoading() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
     }
 }
 
