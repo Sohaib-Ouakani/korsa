@@ -11,6 +11,8 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns.Companion.raw
+import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -18,6 +20,8 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.String
 import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 // ── Interface ──────────────────────────────────────────────────────────────
 interface ProfilesRepository {
@@ -33,7 +37,8 @@ interface ProfilesRepository {
     suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean
     suspend fun AddFollowToAProfileByUserId(userId: String)
     suspend fun StopFollowToAProfileByUserId(userId: String)
-
+    suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String
+    fun avatarUrl(path: String): String
 }
 
 // ── Fake implementation ────────────────────────────────────────────────────
@@ -222,6 +227,32 @@ class ProfilesRepositoryImpl(
             .decodeList<Profile>()
 
     }
+
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String {
+        val userId = getMyAuthUserId()
+        val extension = if (mimeType == "image/png") "png" else "jpg"
+
+        // Delete old avatar if exists
+        runCatching {
+            val old = getMyProfile().avatarPath
+            if (old != null) supabase.storage.from("avatars").delete(listOf(old))
+        }
+
+        val path = "$userId/avatar-${Uuid.random()}.$extension"
+
+        supabase.storage
+            .from("avatars")
+            .upload(path, imageBytes) {
+                contentType = ContentType.parse(mimeType)
+            }
+
+        updateProfile(ProfileUpdate(avatarPath = path))
+        return path
+    }
+
+    override fun avatarUrl(path: String): String =
+        supabase.storage.from("avatars").publicUrl(path)
 
     private fun getMyAuthUserId(): String {
         return supabase.auth.currentUserOrNull()?.id ?: error("User not authenticated")

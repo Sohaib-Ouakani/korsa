@@ -121,6 +121,7 @@ fun CorsaNavGraph(navController: NavHostController) {
                         onSaveNewUsername = settingsViewModel::saveNewUsername,
                         onSaveNewPassword = settingsViewModel::saveNewPassword,
                         onClearError = settingsViewModel::clearError,
+                        onUploadAvatar = settingsViewModel::uploadAvatar,
                     )
                 }
                 composable<CorsaRoute.RunDetailScreen> {

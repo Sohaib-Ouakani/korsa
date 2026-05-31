@@ -98,7 +98,8 @@ dependencies {
     implementation(libs.realtime.kt)
     implementation(libs.auth.kt)
     implementation(libs.compose.auth)
-    implementation(libs.postgrest.kt) // optional
+    implementation(libs.postgrest.kt)
+    implementation(libs.storage.kt)
 
     // Ktor engine for Android
     implementation(libs.ktor.client.okhttp)

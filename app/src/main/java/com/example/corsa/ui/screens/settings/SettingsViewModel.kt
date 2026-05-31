@@ -20,7 +20,8 @@ sealed interface SettingsState {
 data class SettingsInfo(
     val currentUsername: String,
     val currentEmail: String,
-    val isEmailUser: Boolean
+    val isEmailUser: Boolean,
+    val avatarUrl: String?
 )
 
 class SettingsViewModel(
@@ -44,7 +45,15 @@ class SettingsViewModel(
                 val profile = profilesRepository.getMyProfile()
                 val email = authRepository.getEmail()
                 val isEmailUser = authRepository.isEmailUser()
-                _settingsInfo.value = SettingsInfo(profile.username, email, isEmailUser)
+                _settingsInfo.value = SettingsInfo(
+                    currentUsername = profile.username,
+                    currentEmail = email,
+                    isEmailUser = isEmailUser,
+                    avatarUrl = profile.avatarPath?.let {
+                        profilesRepository.avatarUrl(it) + "?t=${profile.updatedAt}"
+                    }
+
+                )
                 _settingsState.value = SettingsState.Idle
             } catch (e: Exception) {
                 _settingsState.value = SettingsState.Error(
@@ -92,6 +101,22 @@ class SettingsViewModel(
             } catch (e: Exception) {
                 _settingsState.value = SettingsState.Error(
                     message = e.message ?: "Failed to update password"
+                )
+            }
+        }
+    }
+
+    fun uploadAvatar(imageBytes: ByteArray, mimeType: String) {
+        viewModelScope.launch {
+            _settingsState.value = SettingsState.Loading
+            try {
+                val newPath = profilesRepository.uploadAvatar(imageBytes, mimeType)
+                val newUrl = profilesRepository.avatarUrl(newPath)
+                _settingsInfo.value = _settingsInfo.value?.copy(avatarUrl = newUrl)
+                _settingsState.value = SettingsState.Success
+            } catch (e: Exception) {
+                _settingsState.value = SettingsState.Error(
+                    message = e.message ?: "Failed to upload avatar"
                 )
             }
         }
