@@ -240,10 +240,7 @@ private fun ColumnScope.Avatar(
 
         if (avatarUrl != null) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUrl)
-                    .diskCachePolicy(CachePolicy.DISABLED)
-                    .build(),
+                model = avatarUrl,
                 contentDescription = "Avatar",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
