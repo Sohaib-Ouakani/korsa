@@ -53,7 +53,7 @@ sealed interface CorsaRoute {
 fun CorsaNavGraph(
     navController: NavHostController,
     deepLinkUri: String? = null
-    ) {
+) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val startDestination by sessionViewModel.startDestination.collectAsStateWithLifecycle()
 
