@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.rundetail
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
@@ -64,6 +66,7 @@ fun RunDetailScreen(
     toggleLike: () -> Unit,
     onAddComment: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
@@ -76,7 +79,31 @@ fun RunDetailScreen(
         is RunDetailState.Success -> {
             BottomSheetScaffold(
                 scaffoldState = sheetState,
-                topBar = { BackTopBar(navController = navController) },
+                topBar = {
+                    BackTopBar(
+                        navController = navController,
+                        actions = {
+                            IconButton(onClick = {
+                                val shareUrl = "corsa://run/${state.run.shareToken}"
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "Check out my run on Corsa! $shareUrl"
+                                    )
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(intent, "Share run via")
+                                )
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Share run"
+                                )
+                            }
+                        }
+                    )
+                },
                 sheetPeekHeight = 260.dp,
                 sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 sheetContainerColor = MaterialTheme.colorScheme.surface,

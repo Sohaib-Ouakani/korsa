@@ -1,5 +1,6 @@
 package com.example.corsa.ui.composables
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -11,7 +12,10 @@ import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BackTopBar(navController: NavController) {
+fun BackTopBar(
+    navController: NavController,
+    actions: @Composable RowScope.() -> Unit = {}  // ← add this, empty by default
+) {
     CenterAlignedTopAppBar(
         title = { AppBarText() },
         navigationIcon = {
@@ -21,6 +25,7 @@ fun BackTopBar(navController: NavController) {
                     contentDescription = "Back"
                 )
             }
-        }
+        },
+        actions = actions  // ← pass it through
     )
 }

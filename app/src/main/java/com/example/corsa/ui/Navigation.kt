@@ -1,6 +1,7 @@
 package com.example.corsa.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -29,6 +30,7 @@ import com.example.corsa.ui.screens.stats.StatsScreen
 import com.example.corsa.ui.screens.stats.StatsScreenViewModel
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
+import androidx.core.net.toUri
 
 sealed interface CorsaRoute {
     @Serializable data object Home : CorsaRoute
@@ -44,12 +46,29 @@ sealed interface CorsaRoute {
     @Serializable data class ProfileDetailScreen(val userId: String) : CorsaRoute
 
     @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
+    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute  // ← add this
 }
 
 @Composable
-fun CorsaNavGraph(navController: NavHostController) {
+fun CorsaNavGraph(
+    navController: NavHostController,
+    deepLinkUri: String? = null
+) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val startDestination by sessionViewModel.startDestination.collectAsStateWithLifecycle()
+
+    // Handle deep link once nav graph is ready
+    LaunchedEffect(deepLinkUri) {
+        if (deepLinkUri != null) {
+            val uri = deepLinkUri.toUri()
+            if (uri.scheme == "corsa" && uri.host == "run") {
+                val token = uri.lastPathSegment
+                if (token != null) {
+                    navController.navigate(CorsaRoute.SharedRunScreen(token))
+                }
+            }
+        }
+    }
 
     when (startDestination) {
         StartDestination.Loading -> SplashScreen()
@@ -125,6 +144,16 @@ fun CorsaNavGraph(navController: NavHostController) {
                     )
                 }
                 composable<CorsaRoute.RunDetailScreen> {
+                    val runDetailViewModel = koinViewModel<RunDetailViewModel>()
+                    val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
+                    RunDetailScreen(
+                        navController = navController,
+                        state = state,
+                        toggleLike = runDetailViewModel::toggleLike,
+                        onAddComment = runDetailViewModel::onAddComment
+                    )
+                }
+                composable<CorsaRoute.SharedRunScreen> {
                     val runDetailViewModel = koinViewModel<RunDetailViewModel>()
                     val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
                     RunDetailScreen(
