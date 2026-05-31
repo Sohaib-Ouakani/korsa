@@ -288,7 +288,7 @@ fun UserDateRow(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = runnerProfile.username.take(8) + "…",
+                text = runnerProfile.username,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
