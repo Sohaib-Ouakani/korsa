@@ -16,11 +16,13 @@ class StatsScreenViewModel(
 ): ViewModel() {
     private val _profile = MutableStateFlow<UserEntry?>(null)
     val profile: StateFlow<UserEntry?> = _profile
-    private val _runs = MutableStateFlow<List<Run>>(listOf())
+    private val _runs = MutableStateFlow<List<Run>>(emptyList())
     val runs: StateFlow<List<Run>> = _runs
+
 
     init {
         loadProfile()
+        observeRuns()
     }
 
     fun refreshProfile() {
@@ -34,6 +36,16 @@ class StatsScreenViewModel(
         viewModelScope.launch {
             _profile.value = profilesRepository.getMyUserEntry()
             _runs.value = runsRepository.getMyRuns()
+        }
+    }
+
+    private fun observeRuns() {
+        viewModelScope.launch {
+            val userId = profilesRepository.getMyProfile().id // see note below
+            runsRepository.observeRunUpdates(userId)
+                .collect { runs ->
+                    _runs.value = runs
+                }
         }
     }
 }

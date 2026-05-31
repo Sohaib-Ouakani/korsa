@@ -8,15 +8,25 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.PostgresChangeFilter
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
-import kotlin.time.Clock
 import kotlin.time.Instant
 
 interface RunsRepository {
@@ -31,6 +41,8 @@ interface RunsRepository {
         distanceMeters: Float,
         meanPaceSecPerKm: Int,
     ): Unit
+    // Add to the interface
+    fun observeRunUpdates(userId: String): Flow<List<Run>>
 }
 
 class RunsRepositoryImpl(
@@ -122,5 +134,25 @@ class RunsRepositoryImpl(
         )
 
         supabase.from("runs").insert(run)
+    }
+
+    // Add to RunsRepositoryImpl
+    override fun observeRunUpdates(userId: String): Flow<List<Run>> = callbackFlow {
+        trySend(getRunsByUserId(userId))
+
+        val channel = supabase.realtime.channel("runs:$userId")
+
+        channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+            table = "runs"
+            filter("user_id", FilterOperator.EQ, userId)
+        }.onEach {
+            trySend(getRunsByUserId(userId))
+        }.launchIn(this)
+
+        channel.subscribe()
+
+        awaitClose {
+            launch { channel.unsubscribe() }
+        }
     }
 }

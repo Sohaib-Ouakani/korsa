@@ -59,6 +59,7 @@ postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
 compose-auth-ui = { group = "io.github.jan-tennert.supabase", name = "compose-auth-ui" }
 
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
+realtime-kt = { module = "io.github.jan-tennert.supabase:realtime-kt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
