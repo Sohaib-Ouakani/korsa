@@ -68,8 +68,8 @@ fun ProfileStats(
                     StatCard("Challenge\nCompletate", infoentries.completedChallenge.toString(), modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    StatCard("Totale Km", infoentries.totKm.toString(), modifier = Modifier.weight(1f))
-                    StatCard("Km Settimanali", infoentries.weekKm.toString(), modifier = Modifier.weight(1f))
+                    StatCard("Totale Km", "%.2f".format(infoentries.totKm), modifier = Modifier.weight(1f))
+                    StatCard("Km Settimanali", "%.2f".format(infoentries.weekKm), modifier = Modifier.weight(1f))
                 }
             }
         }

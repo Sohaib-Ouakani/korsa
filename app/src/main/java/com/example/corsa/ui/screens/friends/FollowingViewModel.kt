@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.friends
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.model.Profile
@@ -28,6 +29,7 @@ data class UserRankEntry(
 )
 
 data class RunFeedEntry(
+    val runId: String,
     val userId: String,
     val displayName: String,
     val avatarUrl: String?,
@@ -86,6 +88,7 @@ class FollowingViewModel(
             )
             _uiState.value = FriendUIState.Success
             loadRanking(SortBy.Kilometers)
+            loadFeed()
         } catch (e: Exception) {
             _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
         }
@@ -130,23 +133,20 @@ class FollowingViewModel(
     fun loadFeed() {
         viewModelScope.launch {
             try {
-                // Build a name+avatar lookup so we don't hit the DB per run
-                val profileById = cachedFriendProfiles.associateBy { it.authUserId }
-
                 val allRuns = cachedFriendProfiles.flatMap { profile ->
-                    runsRepository.getRunsByUserId(profile.authUserId).map { run ->
-                        val owner = profileById[profile.authUserId]
-                        RunFeedEntry(
-                            userId      = profile.id,
-                            displayName = owner?.username ?: profile.username,
-                            avatarUrl   = owner?.avatarPath,
-                            startTime   = run.startTime.toString(),
-                            pathUrl     = run.previewPath,
-                            distance    = run.distanceMeters.toDouble() / 1000.0,
-                        )
-                    }
+                    runsRepository.getRunsByUserId(profile.id)
+                        .map { run ->
+                            RunFeedEntry(
+                                runId       = run.id,
+                                userId      = profile.id,
+                                displayName = profile.username,
+                                avatarUrl   = profile.avatarPath,
+                                startTime   = run.startTime.toString(),
+                                pathUrl     = run.previewPath,
+                                distance    = run.distanceMeters.toDouble() / 1000.0,
+                            )
+                        }
                 }
-
                 _feedEntries.value = allRuns.sortedByDescending { it.startTime }
             } catch (e: Exception) {
                 _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")

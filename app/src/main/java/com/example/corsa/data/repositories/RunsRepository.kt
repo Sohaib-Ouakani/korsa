@@ -21,12 +21,21 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 interface RunsRepository {
@@ -46,7 +55,8 @@ interface RunsRepository {
 }
 
 class RunsRepositoryImpl(
-    private val supabase: SupabaseClient
+    private val supabase: SupabaseClient,
+    private val httpClient: HttpClient
 ) : RunsRepository {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -122,6 +132,17 @@ class RunsRepositoryImpl(
             append(")")
         }
 
+        val elevationGain = calculateElevationGain(points)
+
+        val startTime = Instant.fromEpochMilliseconds(startEpochMs)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+        val temperature = fetchTemperatureForRun(
+            client = httpClient,         // your injected HttpClient
+            lat = points.first().lat,
+            lon = points.first().lng,
+            startTime = startTime
+        )
+
         val run = RunInsert(
             userId = userId,
             startTime = Instant.fromEpochMilliseconds(startEpochMs),
@@ -129,12 +150,67 @@ class RunsRepositoryImpl(
             path = wkt,
             distanceMeters = distanceMeters,
             meanPaceSeconds = meanPaceSecPerKm,
-            temperature = null,
-            elevationGain = null,
+            temperature = temperature,
+            elevationGain = elevationGain,
             previewPath = null,
         )
 
         supabase.from("runs").insert(run)
+    }
+
+    private fun calculateElevationGain(points: List<HomeViewModel.TrackingPoint>): Float? {
+        val altitudes = points.mapNotNull { it.altitude }
+        if (altitudes.size < 2) return null
+
+        var gain = 0.0
+        for (i in 1 until altitudes.size) {
+
+            val diff = altitudes[i] - altitudes[i - 1]
+            if (diff > 0) gain += diff
+        }
+        return gain.toFloat()
+    }
+
+    @Serializable
+    private data class OpenMeteoResponse(val hourly: HourlyData)
+
+    @Serializable
+    private data class HourlyData(
+        val time: List<String>,
+        val temperature_2m: List<Double?>
+    )
+    private suspend fun fetchTemperatureForRun(
+        client: HttpClient,
+        lat: Double,
+        lon: Double,
+        startTime: LocalDateTime
+    ): Float? {
+        val date = startTime.date.toString()
+        val hour = startTime.hour
+        val isToday = startTime.date == Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        val baseUrl = if (isToday)
+            "https://api.open-meteo.com/v1/forecast"
+        else
+            "https://archive-api.open-meteo.com/v1/archive"
+
+        return try {
+            val response = client.get(baseUrl) {
+                parameter("latitude", lat)
+                parameter("longitude", lon)
+                parameter("hourly", "temperature_2m")
+                parameter("start_date", date)
+                parameter("end_date", date)
+                parameter("timezone", "auto")
+            }
+            val body = json.decodeFromString<OpenMeteoResponse>(response.bodyAsText())
+            val targetTime = "${date}T${hour.toString().padStart(2, '0')}:00"
+            val index = body.hourly.time.indexOf(targetTime)
+            if (index >= 0) body.hourly.temperature_2m[index]?.toFloat() else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Add to RunsRepositoryImpl
