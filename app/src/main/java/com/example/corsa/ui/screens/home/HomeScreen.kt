@@ -174,7 +174,7 @@ private fun ColumnScope.StartButton(
 }
 
 @Composable
-private fun LocationLabel(cs: ColorScheme, locationName: String) {
+private fun LocationLabel(cs: ColorScheme, locationName: String?) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -187,7 +187,7 @@ private fun LocationLabel(cs: ColorScheme, locationName: String) {
         )
         Spacer(Modifier.width(Spacing.sm))
         Text(
-            text = locationName,
+            text = locationName ?: "...",
             color = cs.primary,
             style = MaterialTheme.typography.labelSmall
         )
