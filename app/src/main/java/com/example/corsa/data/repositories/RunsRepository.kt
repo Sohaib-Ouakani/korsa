@@ -13,6 +13,25 @@ import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -20,6 +39,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Instant
+import kotlin.time.Clock
 
 interface RunsRepository {
     suspend fun getRunById(id: String): Run
@@ -32,7 +52,8 @@ interface RunsRepository {
         points: List<HomeViewModel.TrackingPoint>,
         distanceMeters: Float,
         meanPaceSecPerKm: Int,
-    ): Unit
+    )
+    fun observeRunUpdates(userId: String): Flow<List<Run>>
     suspend fun getCommentsById(id: String): List<CommentEntry>
     suspend fun getLikeCountById(id: String): Int
     suspend fun addLikeToARun(runId: String)
@@ -42,10 +63,12 @@ interface RunsRepository {
 }
 
 class RunsRepositoryImpl(
-    private val supabase: SupabaseClient
+    private val supabase: SupabaseClient,
+    private val httpClient: HttpClient
 ) : RunsRepository {
 
     private val json = Json { ignoreUnknownKeys = true }
+    private val activeChannels = mutableMapOf<String, RealtimeChannel>()
 
     override suspend fun getRunById(id: String): Run {
         return supabase
@@ -100,6 +123,17 @@ class RunsRepositoryImpl(
             append(")")
         }
 
+        val elevationGain = calculateElevationGain(points)
+
+        val startTime = Instant.fromEpochMilliseconds(startEpochMs)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+        val temperature = fetchTemperatureForRun(
+            client = httpClient,         // your injected HttpClient
+            lat = points.first().lat,
+            lon = points.first().lng,
+            startTime = startTime
+        )
+
         val run = RunInsert(
             userId = userId,
             startTime = Instant.fromEpochMilliseconds(startEpochMs),
@@ -107,12 +141,97 @@ class RunsRepositoryImpl(
             path = wkt,
             distanceMeters = distanceMeters,
             meanPaceSeconds = meanPaceSecPerKm,
-            temperature = null,
-            elevationGain = null,
+            temperature = temperature,
+            elevationGain = elevationGain,
             previewPath = null,
         )
 
         supabase.from("runs").insert(run)
+    }
+
+    private fun calculateElevationGain(points: List<HomeViewModel.TrackingPoint>): Float? {
+        val altitudes = points.mapNotNull { it.altitude }
+        if (altitudes.size < 2) return null
+
+        var gain = 0.0
+        for (i in 1 until altitudes.size) {
+
+            val diff = altitudes[i] - altitudes[i - 1]
+            if (diff > 0) gain += diff
+        }
+        return gain.toFloat()
+    }
+
+    @Serializable
+    private data class OpenMeteoResponse(val hourly: HourlyData)
+
+    @Serializable
+    private data class HourlyData(
+        val time: List<String>,
+        val temperature_2m: List<Double?>
+    )
+    private suspend fun fetchTemperatureForRun(
+        client: HttpClient,
+        lat: Double,
+        lon: Double,
+        startTime: LocalDateTime
+    ): Float? {
+        val date = startTime.date.toString()
+        val hour = startTime.hour
+        val isToday = startTime.date == Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        val baseUrl = if (isToday)
+            "https://api.open-meteo.com/v1/forecast"
+        else
+            "https://archive-api.open-meteo.com/v1/archive"
+
+        return try {
+            val response = client.get(baseUrl) {
+                parameter("latitude", lat)
+                parameter("longitude", lon)
+                parameter("hourly", "temperature_2m")
+                parameter("start_date", date)
+                parameter("end_date", date)
+                parameter("timezone", "auto")
+            }
+            val body = json.decodeFromString<OpenMeteoResponse>(response.bodyAsText())
+            val targetTime = "${date}T${hour.toString().padStart(2, '0')}:00"
+            val index = body.hourly.time.indexOf(targetTime)
+            if (index >= 0) body.hourly.temperature_2m[index]?.toFloat() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Add to RunsRepositoryImpl
+    override fun observeRunUpdates(userId: String): Flow<List<Run>> = callbackFlow {
+        trySend(getRunsByUserId(userId))
+
+        // Unsubscribe existing channel for this user if any
+        activeChannels[userId]?.let {
+            it.unsubscribe()
+            activeChannels.remove(userId)
+        }
+
+        val channel = supabase.realtime.channel("runs:$userId")
+        activeChannels[userId] = channel
+
+        channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+            table = "runs"
+            filter("user_id", FilterOperator.EQ, userId)
+        }.onEach {
+            trySend(getRunsByUserId(userId))
+        }.launchIn(this)
+
+        channel.subscribe()
+
+        awaitClose {
+            launch {
+                channel.unsubscribe()
+                activeChannels.remove(userId)
+            }
+        }
     }
 
     override suspend fun getCommentsById(id: String): List<CommentEntry> {

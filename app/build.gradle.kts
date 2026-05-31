@@ -95,6 +95,7 @@ dependencies {
 
     // Supabase BOM keeps versions in sync
     implementation(platform(libs.bom))
+    implementation(libs.realtime.kt)
     implementation(libs.auth.kt)
     implementation(libs.compose.auth)
     implementation(libs.postgrest.kt) // optional
