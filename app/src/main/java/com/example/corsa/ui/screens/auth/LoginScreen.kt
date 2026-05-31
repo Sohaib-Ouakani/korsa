@@ -38,18 +38,18 @@ fun LoginScreen(
 
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
         when (state) {
-            is AuthState.Error -> snackbarHostState.showSnackbar(state.message)
+            is AuthState.Error -> snackBarHostState.showSnackbar(state.message)
             else -> {}
         }
     }
 
     Scaffold(
         topBar = { LoginScreenTopBar(onBack = { navController.popBackStack() }) },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier

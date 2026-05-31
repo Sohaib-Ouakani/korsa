@@ -63,7 +63,7 @@ class FollowingViewModel(
     val isRankLoading: StateFlow<Boolean> = _isRankLoading.asStateFlow()
 
     // Cached friends profiles to avoid repeated network calls
-    private var cachedFriendProfiles: List<com.example.corsa.data.model.Profile> = emptyList()
+    private var cachedFriendProfiles: List<Profile> = emptyList()
 
     // Holds friends names for the search bar
     private val _searchStatus = MutableStateFlow(SearchStatus(emptyList(), emptyList()))

@@ -43,6 +43,7 @@ import kotlin.time.Clock
 
 interface RunsRepository {
     suspend fun getRunById(id: String): Run
+    suspend fun getRunByShareToken(token: String): Run
     suspend fun getRunsByUserId(userId: String): List<Run>
     suspend fun getMyRuns(): List<Run>
     suspend fun saveRun(
@@ -75,6 +76,16 @@ class RunsRepositoryImpl(
             .from("runs_with_geojson")  // ← was "runs"
             .select {                    // ← drop Columns.raw(...)
                 filter { eq("id", id) }
+            }
+            .decodeSingle<Run>()
+            .wrapPathAsFeatureCollection()
+    }
+
+    override suspend fun getRunByShareToken(token: String): Run {
+        return supabase
+            .from("runs_with_geojson")
+            .select {
+                filter { eq("share_token", token) }
             }
             .decodeSingle<Run>()
             .wrapPathAsFeatureCollection()

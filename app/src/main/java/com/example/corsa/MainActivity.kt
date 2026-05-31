@@ -15,7 +15,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             CorsaTheme {
                 val navController = rememberNavController()
-                CorsaNavGraph(navController)
+                CorsaNavGraph(
+                    navController = navController,
+                    deepLinkUri = intent?.data?.toString()  //raw URI
+                )
             }
         }
     }

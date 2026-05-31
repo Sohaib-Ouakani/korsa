@@ -27,7 +27,9 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("preview_path")
-    val previewPath: String? = null
+    val previewPath: String? = null,
+    @SerialName("share_token")
+    val shareToken: String? = null,
 )
 
 @Serializable
