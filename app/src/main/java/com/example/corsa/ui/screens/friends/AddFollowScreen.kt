@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.composables.BottomBar
@@ -152,15 +155,49 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
                 filteredSuggested.forEach { friend ->
                     ListItem(
                         headlineContent = { Text(friend.username) },
+                        leadingContent = {
+                            // Avatar circle
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val avatarUrl = friend.avatarPath?.let {
+                                    viewModel.buildAvatarUrl(it)
+                                }
+                                if (avatarUrl != null) {
+                                    AsyncImage(
+                                        model = avatarUrl,
+                                        contentDescription = "${friend.username}'s avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Surface(
+                                        modifier = Modifier.fillMaxSize(),
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .fillMaxSize(),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        },
                         colors = ListItemDefaults.colors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
-                        modifier = Modifier
-                            .clickable {
+                        modifier = Modifier.clickable {
                             query = friend.username
                             navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
                             expanded = false
-                        },
+                        }
                     )
                 }
             } else if (query.isNotBlank()) {

@@ -128,6 +128,10 @@ class FollowingViewModel(
         }
     }
 
+    fun buildAvatarUrl(avatarPath: String): String {
+        return profilesRepository.avatarUrl(avatarPath)
+    }
+
     // ── Feed ────────────────────────────────────────────────────────────────
 
     fun loadFeed() {
