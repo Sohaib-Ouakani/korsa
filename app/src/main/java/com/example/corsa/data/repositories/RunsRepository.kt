@@ -12,7 +12,7 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.PostgresChangeFilter
+import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.realtime.channel
 import kotlinx.coroutines.channels.awaitClose
@@ -50,6 +50,7 @@ class RunsRepositoryImpl(
 ) : RunsRepository {
 
     private val json = Json { ignoreUnknownKeys = true }
+    private val activeChannels = mutableMapOf<String, RealtimeChannel>()
 
     override suspend fun getRunById(id: String): Run {
         return supabase
@@ -140,7 +141,14 @@ class RunsRepositoryImpl(
     override fun observeRunUpdates(userId: String): Flow<List<Run>> = callbackFlow {
         trySend(getRunsByUserId(userId))
 
+        // Unsubscribe existing channel for this user if any
+        activeChannels[userId]?.let {
+            it.unsubscribe()
+            activeChannels.remove(userId)
+        }
+
         val channel = supabase.realtime.channel("runs:$userId")
+        activeChannels[userId] = channel
 
         channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
             table = "runs"
@@ -152,7 +160,10 @@ class RunsRepositoryImpl(
         channel.subscribe()
 
         awaitClose {
-            launch { channel.unsubscribe() }
+            launch {
+                channel.unsubscribe()
+                activeChannels.remove(userId)
+            }
         }
     }
 }
