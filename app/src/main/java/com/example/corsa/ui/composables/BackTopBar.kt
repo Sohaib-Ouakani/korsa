@@ -14,7 +14,7 @@ import androidx.navigation.NavController
 @Composable
 fun BackTopBar(
     navController: NavController,
-    actions: @Composable RowScope.() -> Unit = {}  // ← add this, empty by default
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
     CenterAlignedTopAppBar(
         title = { AppBarText() },
@@ -26,6 +26,6 @@ fun BackTopBar(
                 )
             }
         },
-        actions = actions  // ← pass it through
+        actions = actions
     )
 }

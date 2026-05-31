@@ -112,12 +112,12 @@ class RunDetailViewModel(
 
     fun onAddComment(content: String) {
         val currentState = _runDetailState.value as? RunDetailState.Success ?: return
-        val runId = currentState.run.id  // ← same here
+        val runId = currentState.run.id
 
         viewModelScope.launch {
             try {
                 runRepository.addCommentToARun(runId, content)
-                val comments = runRepository.getCommentsById(runId)  // re-fetch
+                val comments = runRepository.getCommentsById(runId)
                 val currentState = _runDetailState.value
                 if (currentState is RunDetailState.Success) {
                     _runDetailState.value = currentState.copy(comments = comments)

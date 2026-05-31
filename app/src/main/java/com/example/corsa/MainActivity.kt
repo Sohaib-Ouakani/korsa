@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 CorsaNavGraph(
                     navController = navController,
-                    deepLinkUri = intent?.data?.toString()  // ← raw URI
+                    deepLinkUri = intent?.data?.toString()  //raw URI
                 )
             }
         }

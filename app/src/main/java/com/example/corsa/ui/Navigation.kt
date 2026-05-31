@@ -57,7 +57,6 @@ fun CorsaNavGraph(
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val startDestination by sessionViewModel.startDestination.collectAsStateWithLifecycle()
 
-    // Handle deep link once nav graph is ready
     LaunchedEffect(deepLinkUri) {
         if (deepLinkUri != null) {
             val uri = deepLinkUri.toUri()
