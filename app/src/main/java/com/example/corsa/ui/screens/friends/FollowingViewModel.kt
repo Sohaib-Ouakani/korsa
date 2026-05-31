@@ -29,6 +29,7 @@ data class UserRankEntry(
 )
 
 data class RunFeedEntry(
+    val runId: String,
     val userId: String,
     val displayName: String,
     val avatarUrl: String?,
@@ -136,6 +137,7 @@ class FollowingViewModel(
                     runsRepository.getRunsByUserId(profile.id)
                         .map { run ->
                             RunFeedEntry(
+                                runId       = run.id,
                                 userId      = profile.id,
                                 displayName = profile.username,
                                 avatarUrl   = profile.avatarPath,

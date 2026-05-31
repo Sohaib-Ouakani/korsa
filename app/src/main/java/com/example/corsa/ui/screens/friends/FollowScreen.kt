@@ -128,8 +128,8 @@ fun FollowScreen(
             }
 
             when (selectedTab) {
-                StatsTab.Rank -> Rank(viewModel)
-                StatsTab.Feed -> Feed(viewModel)
+                StatsTab.Rank -> Rank(viewModel, navController)
+                StatsTab.Feed -> Feed(viewModel, navController)
             }
         }
     }
@@ -138,28 +138,31 @@ fun FollowScreen(
 // ── Feed part  ────────────────────────────────────────────────
 
 @Composable
-fun Feed(viewModel: FollowingViewModel) {
+fun Feed(viewModel: FollowingViewModel, navController: NavController) {
     val entries by viewModel.feedEntry.collectAsStateWithLifecycle()
-    FeedList(entries = entries)
+    FeedList(entries = entries, navController)
 }
 
 
 @Composable
-fun FeedList(entries: List<RunFeedEntry>) {
+fun FeedList(entries: List<RunFeedEntry>, navController: NavController) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(Spacing.sm, Spacing.sm, Spacing.sm, 80.dp),
     ) {
         items(entries) { entry ->
-            FeedCard(entry = entry)
+            FeedCard(entry = entry, navController)
         }
     }
 }
 
 
 @Composable
-fun FeedCard(entry: RunFeedEntry) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun FeedCard(entry: RunFeedEntry, navController: NavController) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = {navController.navigate(CorsaRoute.RunDetailScreen(entry.runId))}
+    ) {
 
         // ── Immagine percorso (elemento principale) ───────────────────
         if (entry.pathUrl != null) {
@@ -371,7 +374,7 @@ enum class RankTab(val label: String) {
 }
 
 @Composable
-fun Rank(viewModel: FollowingViewModel) {
+fun Rank(viewModel: FollowingViewModel, navController: NavController) {
     var rankSelectedTab by remember { mutableStateOf(RankTab.Kilometers) }
     val tabs = RankTab.entries
     val entries by viewModel.rankEntries.collectAsStateWithLifecycle()
@@ -412,14 +415,15 @@ fun Rank(viewModel: FollowingViewModel) {
                 sortBy  = when (rankSelectedTab) {
                     RankTab.Kilometers -> SortBy.Kilometers
                     RankTab.Level      -> SortBy.Level
-                }
+                },
+                navController
             )
         }
     }
 }
 
 @Composable
-fun RankList(entries: List<UserRankEntry>, sortBy: SortBy) {
+fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavController) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(Spacing.sm, Spacing.sm, Spacing.sm, 80.dp),
@@ -429,16 +433,17 @@ fun RankList(entries: List<UserRankEntry>, sortBy: SortBy) {
                 position = index + 1,
                 entry    = entry,
                 sortBy   = sortBy,
+                navController
             )
         }
     }
 }
 
 @Composable
-fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy) {
+fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController: NavController) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = {}
+        onClick = {navController.navigate(CorsaRoute.ProfileDetailScreen(entry.userId))}
     ) {
         Row(
             modifier              = Modifier.padding(Spacing.md, Spacing.md),
@@ -501,22 +506,3 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy) {
     }
 }
 
-// ── Preview  ────────────────────────────────────────────────
-
-@Preview(showBackground = true)
-@Composable
-fun RankListPreview() {
-    val fakeEntries = listOf(
-        UserRankEntry("1", "J. Donahue", null, 64.2f, 5),
-        UserRankEntry("2", "A. Smith",   null, 58.9f, 4),
-        UserRankEntry("3", "M. Tanaka",  null, 45.1f, 3),
-    )
-
-    CorsaTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            fakeEntries.forEachIndexed { index, entry ->
-                RankCard(position = index + 1, entry = entry, sortBy = SortBy.Kilometers)
-            }
-        }
-    }
-}
