@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BackTopBar
+import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,21 +47,26 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
-        if (state.error != null) {
-            snackbarHostState.showSnackbar(state.error)
+        when(state.error) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            else -> {}
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { BackTopBar(navController) }
-    ) { padding ->
-        MainContent(
-            state = state,
-            actions = actions,
-            padding = padding,
-            snackbarHostState = snackbarHostState
-        )
+    if (state.isLoading) {
+        SplashScreen()
+    } else {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = { BackTopBar(navController) }
+        ) { padding ->
+            MainContent(
+                state = state,
+                actions = actions,
+                padding = padding,
+                snackbarHostState = snackbarHostState
+            )
+        }
     }
 }
 
