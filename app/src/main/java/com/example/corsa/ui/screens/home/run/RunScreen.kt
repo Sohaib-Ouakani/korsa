@@ -27,19 +27,21 @@ import com.example.corsa.ui.theme.Spacing
 
 @Composable
 fun StopWatchScreen(
-    stopWatchState: StopWatchState,
-    runState: RunState,
-    saveState: SaveState,
+    state: RunUiState,
     navController: NavController,
     actions: RunAction,
-    onRunSaved: () -> Unit
 ){
     val cs = MaterialTheme.colorScheme
-    val text = if (stopWatchState.isRunning) "GO!" else "READY?"
+    val saveState = state.saveState
+    val run = state.run
+    val stopWatch = state.stopWatch
+    val title = if (stopWatch.isRunning) "GO!" else "READY?"
 
     // Navigate home automatically when save succeeds
     LaunchedEffect(saveState) {
-        if (saveState is SaveState.Success) onRunSaved()
+        if (saveState is SaveState.Success) {
+            navController.navigate(CorsaRoute.Home)
+        }
     }
 
     Column(
@@ -50,7 +52,7 @@ fun StopWatchScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = text,
+            text = title,
             color = cs.onPrimary,
             style = MaterialTheme.typography.displayLarge
         )
@@ -64,21 +66,21 @@ fun StopWatchScreen(
         }
         // Distance
         Text(
-            text  = "${"%.2f".format(runState.distanceKm)} km",
+            text  = "${"%.2f".format(run.distanceKm)} km",
             style = MaterialTheme.typography.displayMedium
         )
         // Pace
         Text(
-            text  = runState.formattedPace,
+            text  = run.formattedPace,
             style = MaterialTheme.typography.titleMedium
         )
         Text(
-            text = stopWatchState.formattedTime,
+            text = stopWatch.formattedTime,
             color = cs.onPrimary,
             style = MaterialTheme.typography.displayMedium
         )
         Spacer(Modifier.height(Spacing.lg))
-        if (stopWatchState.isRunning) {
+        if (stopWatch.isRunning) {
             IconButton(
                 onClick = { actions.pause() },
                 modifier = Modifier.size(Size.xl)

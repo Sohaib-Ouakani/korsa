@@ -108,19 +108,12 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.RunScreen> {
                     val runViewModel = koinViewModel<RunViewModel>()
-                    val stopWatchState by runViewModel.stopWatchState.collectAsStateWithLifecycle()
-                    val runState by runViewModel.runState.collectAsStateWithLifecycle()
-                    val saveState by runViewModel.saveState.collectAsStateWithLifecycle()
+                    val state by runViewModel.uiState.collectAsStateWithLifecycle()
                     val actions = runViewModel.runActions
                     StopWatchScreen(
-                        stopWatchState,
-                        runState,
-                        saveState,
+                        state,
                         navController,
                         actions = actions,
-                        onRunSaved = {
-                            navController.navigate(CorsaRoute.Home)
-                        }
                     )
                 }
                 composable<CorsaRoute.StatsScreen> {

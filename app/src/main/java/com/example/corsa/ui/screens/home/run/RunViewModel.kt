@@ -11,7 +11,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -66,6 +69,12 @@ data class RunState(
     }
 }
 
+data class RunUiState(
+    val stopWatch: StopWatchState = StopWatchState(),
+    val run: RunState = RunState(),
+    val saveState: SaveState = SaveState.Idle,
+)
+
 class RunViewModel(
     private val runsRepository: RunsRepository,
     private val profilesRepository: ProfilesRepository,
@@ -78,21 +87,17 @@ class RunViewModel(
     )
     private val _profile = MutableStateFlow<Profile?>(null)
     private val profile: StateFlow<Profile?> = _profile
-
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
-    val saveState: StateFlow<SaveState> = _saveState
-
-    // ── Run tracking state ───────────────────────────────────────────────────────
-
     private val _runState = MutableStateFlow(RunState())
-    val runState: StateFlow<RunState> = _runState
-
+    private val runState: StateFlow<RunState> = _runState
     private var trackingJob: Job? = null
-
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    val stopWatchState: StateFlow<StopWatchState> = _stopWatchState
-
     private var timerJob: Job? = null
+    val uiState: StateFlow<RunUiState> = combine(
+        _stopWatchState, _runState, _saveState
+    ) { sw, run, save ->
+        RunUiState(sw, run, save)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, RunUiState())
 
     init {
         loadProfile()
@@ -174,19 +179,22 @@ class RunViewModel(
         pause()
         if (_stopWatchState.value.elapsedTime > 10) {
             finishRun()
+        } else {
+            _stopWatchState.update { current ->
+                current.copy(
+                    elapsedTime = 0L
+                )
+            }
+            _runState.value = RunState()
         }
-        _stopWatchState.update { current ->
-            current.copy(
-                elapsedTime = 0L
-            )
-        }
-        _runState.value = RunState()
     }
 
     private fun finishRun() {
         val userId = profile.value?.id ?: return
         val run    = runState.value
         val endMs  = Clock.System.now().toEpochMilliseconds()
+        _stopWatchState.update { it.copy(elapsedTime = 0L) }
+        _runState.value = RunState()
 
         if (run.points.size < 2) {
             _saveState.value = SaveState.Error("Run too short to save")
@@ -205,7 +213,6 @@ class RunViewModel(
                     meanPaceSecPerKm = run.currentPaceSecPerKm,
                 )
             }.onSuccess {
-                reset()
                 _saveState.value = SaveState.Success
             }.onFailure { e ->
                 _saveState.value = SaveState.Error(e.message ?: "Unknown error")
