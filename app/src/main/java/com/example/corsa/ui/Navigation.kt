@@ -129,17 +129,11 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.SettingsScreen> {
                     val settingsViewModel = koinViewModel<SettingsViewModel>()
-                    val settingsInfo by settingsViewModel.settingsInfo.collectAsStateWithLifecycle()
                     val state by settingsViewModel.settingsState.collectAsStateWithLifecycle()
                     SettingsScreen(
                         navController = navController,
-                        settingsInfo = settingsInfo,
                         state = state,
-                        onLogOut = settingsViewModel::logout,
-                        onSaveNewUsername = settingsViewModel::saveNewUsername,
-                        onSaveNewPassword = settingsViewModel::saveNewPassword,
-                        onClearError = settingsViewModel::clearError,
-                        onUploadAvatar = settingsViewModel::uploadAvatar,
+                        actions = settingsViewModel.settingsActions,
                     )
                 }
                 composable<CorsaRoute.RunDetailScreen> {

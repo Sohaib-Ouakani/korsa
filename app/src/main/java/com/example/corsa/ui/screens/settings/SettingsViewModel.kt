@@ -5,34 +5,45 @@ import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.model.ProfileUpdate
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.ProfilesRepository
+import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed interface SettingsState {
-    data object Idle: SettingsState
-    data object Loading : SettingsState
-    data object Success : SettingsState
-    data class Error(val message: String, val id: Long = System.currentTimeMillis()): SettingsState
-}
+data class SettingsState(
+    val isLoading: Boolean,
+    val currentUsername: String = "",
+    val currentEmail: String = "",
+    val isEmailUser: Boolean = false,
+    val avatarUrl: String? = null,
+    val error: String? = null,
+)
 
-data class SettingsInfo(
-    val currentUsername: String,
-    val currentEmail: String,
-    val isEmailUser: Boolean,
-    val avatarUrl: String?
+data class SettingsActions(
+    val logout: () -> Unit,
+    val saveNewUsername: (newUsername: String) -> Unit,
+    val saveNewPassword: (oldPassword: String, newPassword: String) -> Unit,
+    val uploadAvatar: (imageBytes: ByteArray, mimeType: String) -> Unit,
+    val clearError: () -> Unit,
 )
 
 class SettingsViewModel(
     private val authRepository: AuthRepository,
     private val profilesRepository: ProfilesRepository
 ) : ViewModel() {
-    private val _settingsInfo = MutableStateFlow<SettingsInfo?>(null)
-    val settingsInfo: StateFlow<SettingsInfo?> = _settingsInfo.asStateFlow()
 
-    private val _settingsState = MutableStateFlow<SettingsState>(SettingsState.Loading)
-    val settingsState: StateFlow<SettingsState> = _settingsState.asStateFlow()
+    val settingsActions = SettingsActions(
+        logout = ::logout,
+        saveNewUsername = ::saveNewUsername,
+        saveNewPassword = ::saveNewPassword,
+        uploadAvatar = ::uploadAvatar,
+        clearError = ::clearError
+    )
+
+    private val _settingsState = MutableStateFlow(SettingsState(
+        isLoading = true,
+    ))
+    val settingsState = _settingsState.asStateFlow()
 
     init {
         loadProfile()
@@ -40,89 +51,122 @@ class SettingsViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
             try {
                 val profile = profilesRepository.getMyProfile()
                 val email = authRepository.getEmail()
                 val isEmailUser = authRepository.isEmailUser()
-                _settingsInfo.value = SettingsInfo(
+                _settingsState.updateState(
+                    isLoading = false,
                     currentUsername = profile.username,
                     currentEmail = email,
                     isEmailUser = isEmailUser,
-                    avatarUrl = profile.avatarPath?.let {
-                        profilesRepository.avatarUrl(it) + "?t=${profile.updatedAt}"
-                    }
-
+                    avatarUrl = Option.Present(
+                        profile.avatarPath?.let {
+                            profilesRepository.avatarUrl(it) + "?t=${profile.updatedAt}"
+                        }
+                    ),
+                    error = Option.Present(null),  // clear any previous error on successful load
                 )
-                _settingsState.value = SettingsState.Idle
             } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Failed to load profile"
-                )
+                _settingsState.updateState(error = Option.Present(e.message ?: "Error while loading profile"))
+            } finally {
+                _settingsState.updateState(isLoading = false)
             }
         }
     }
 
-    fun logout() {
+    private fun logout() {
         viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
+            _settingsState.updateState(
+                isLoading = true,
+                error = Option.Present(null),
+            )
             try {
                 authRepository.logout()
-                _settingsState.value = SettingsState.Success
             } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Logout failed"
-                )
+                _settingsState.updateState(error = Option.Present(e.message ?: "Error while logging out"))
+            } finally {
+                _settingsState.updateState(isLoading = false)
             }
         }
     }
 
-    fun saveNewUsername(newUsername: String) {
+    private fun saveNewUsername(newUsername: String) {
         viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
+            _settingsState.updateState(
+                isLoading = true,
+                error = Option.Present(null),
+            )
             try {
                 val updatedProfile = profilesRepository.updateProfile(ProfileUpdate(username = newUsername.trim()))
-                _settingsInfo.value = _settingsInfo.value?.copy(currentUsername = updatedProfile.username)
-                _settingsState.value = SettingsState.Success
+                _settingsState.updateState(currentUsername = updatedProfile.username)
             } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Failed to update username"
-                )
+                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating username"))
+            } finally {
+                _settingsState.updateState(isLoading = false)
             }
         }
     }
 
-    fun saveNewPassword(oldPassword: String, newPassword: String) {
+    private fun saveNewPassword(oldPassword: String, newPassword: String) {
         viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
+            _settingsState.updateState(
+                isLoading = true,
+                error = Option.Present(null),
+            )
             try {
-                authRepository.updatePassword(oldPassword, newPassword.trim())
-                _settingsState.value = SettingsState.Success
+                authRepository.updatePassword(oldPassword.trim(), newPassword.trim())
             } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Failed to update password"
-                )
+                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating password"))
+            } finally {
+                _settingsState.updateState(isLoading = false)
             }
         }
     }
 
-    fun uploadAvatar(imageBytes: ByteArray, mimeType: String) {
+    private fun uploadAvatar(imageBytes: ByteArray, mimeType: String) {
         viewModelScope.launch {
-            _settingsState.value = SettingsState.Loading
+            _settingsState.updateState(
+                isLoading = true,
+                error = Option.Present(null),
+            )
             try {
                 val newPath = profilesRepository.uploadAvatar(imageBytes, mimeType)
-                val newUrl = profilesRepository.avatarUrl(newPath)
-                _settingsInfo.value = _settingsInfo.value?.copy(avatarUrl = newUrl)
-                _settingsState.value = SettingsState.Success
+                val newUrl = profilesRepository.avatarUrl(newPath) + "?t=${System.currentTimeMillis()}"
+                _settingsState.updateState(avatarUrl = Option.Present(newUrl))
             } catch (e: Exception) {
-                _settingsState.value = SettingsState.Error(
-                    message = e.message ?: "Failed to upload avatar"
-                )
+                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating avatar"))
+            } finally {
+                _settingsState.updateState(isLoading = false)
             }
         }
     }
 
-    fun clearError() {
-        _settingsState.value = SettingsState.Idle
+    private fun clearError() {
+        _settingsState.updateState(error = Option.Present(null))
+    }
+
+    private fun MutableStateFlow<SettingsState>.updateState(
+        isLoading: Boolean? = null,
+        currentUsername: String? = null,
+        currentEmail: String? = null,
+        isEmailUser: Boolean? = null,
+        avatarUrl: Option<String> = Option.Absent,
+        error: Option<String> = Option.Absent,
+    ) {
+        value = value.copy(
+            isLoading = isLoading ?: value.isLoading,
+            currentUsername = currentUsername ?: value.currentUsername,
+            currentEmail = currentEmail ?: value.currentEmail,
+            isEmailUser = isEmailUser ?: value.isEmailUser,
+            avatarUrl = when (avatarUrl) {
+                is Option.Absent -> value.avatarUrl
+                is Option.Present -> avatarUrl.value
+            },
+            error = when (error) {
+                is Option.Absent -> value.error
+                is Option.Present -> error.value
+            },
+        )
     }
 }

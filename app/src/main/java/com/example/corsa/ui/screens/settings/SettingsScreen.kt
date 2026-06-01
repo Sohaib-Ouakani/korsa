@@ -1,58 +1,74 @@
 package com.example.corsa.ui.screens.settings
 
+import android.net.Uri
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.corsa.ui.composables.AppBarText
+import coil.compose.AsyncImage
+import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.theme.Spacing
 import kotlinx.coroutines.launch
-import android.net.Uri
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
 
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    settingsInfo: SettingsInfo?,
     state: SettingsState,
-    onLogOut: () -> Unit,
-    onSaveNewUsername: (String) -> Unit,
-    onSaveNewPassword: (oldPassword: String, newPassword: String) -> Unit,
-    onUploadAvatar: (ByteArray, String) -> Unit,
-    onClearError: () -> Unit,
+    actions: SettingsActions
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state) {
+        if (state.error != null) {
+            snackbarHostState.showSnackbar(state.error)
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { BackTopBar(navController) }
+    ) { padding ->
+        MainContent(
+            state = state,
+            actions = actions,
+            padding = padding,
+            snackbarHostState = snackbarHostState
+        )
+    }
+}
+
+@Composable
+private fun MainContent(
+    state: SettingsState,
+    actions: SettingsActions,
+    padding: PaddingValues,
+    snackbarHostState: SnackbarHostState,
 ) {
     val context = LocalContext.current
 
@@ -61,12 +77,12 @@ fun SettingsScreen(
     ) { uri: Uri? ->
         uri ?: return@rememberLauncherForActivityResult
         val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-        val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
-        onUploadAvatar(bytes, mimeType)
+        val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+            ?: return@rememberLauncherForActivityResult
+        actions.uploadAvatar(bytes, mimeType)
     }
 
     var newUsername by remember { mutableStateOf("") }
-    var newEmail by remember { mutableStateOf("") }
 
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -77,152 +93,134 @@ fun SettingsScreen(
     var currentPassword by remember { mutableStateOf("") }
     var currentPasswordVisible by remember { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     val showSnackbar: (String) -> Unit = { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
-    LaunchedEffect(state) {
-        if (state is SettingsState.Error) {
-            snackbarHostState.showSnackbar(state.message)
-        }
-    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(horizontal = Spacing.lg)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        Spacer(Modifier.height(Spacing.md))
 
-    Scaffold(
-        topBar = { ProfileTopBar(onBack = { navController.popBackStack() }) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { contentPadding ->
+        SectionLabel("ACCOUNT")
+        Spacer(Modifier.height(Spacing.xs))
 
-        // Show a full-screen loader while profile hasn't arrived yet
-        if (settingsInfo == null || state is SettingsState.Loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            return@Scaffold
-        }
+        // Avatar section
+        Avatar(photoPickerLauncher, state)
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(horizontal = Spacing.lg)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
+        Spacer(Modifier.height(Spacing.md))
+
+        EditableField(
+            currentValue = state.currentUsername,
+            newValue = newUsername,
+            onValueChange = { newUsername = it },
+            label = "Username",
+            keyboardType = KeyboardType.Text,
+            onSave = {
+                actions.saveNewUsername(newUsername)
+                newUsername = ""
+            },
+        )
+
+        if (state.isEmailUser) {
             Spacer(Modifier.height(Spacing.md))
-
-            SectionLabel("ACCOUNT")
+            SectionLabel("SICUREZZA")
             Spacer(Modifier.height(Spacing.xs))
 
-            // Avatar section
-            Avatar(photoPickerLauncher, settingsInfo)
-
-            Spacer(Modifier.height(Spacing.md))
-
-            EditableField(
-                currentValue = settingsInfo.currentUsername,
-                newValue     = newUsername,
-                onValueChange = { newUsername = it },
-                label        = "Username",
-                keyboardType = KeyboardType.Text,
-                onSave       = {
-                    onSaveNewUsername(newUsername)
-                    newUsername = ""
-                },
+            PasswordField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                label = "Nuova password",
+                visible = newPasswordVisible,
+                onToggleVisibility = { newPasswordVisible = !newPasswordVisible },
             )
 
-            if (settingsInfo.isEmailUser) {
-                Spacer(Modifier.height(Spacing.md))
-                SectionLabel("SICUREZZA")
-                Spacer(Modifier.height(Spacing.xs))
+            PasswordField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = "Conferma password",
+                visible = confirmPasswordVisible,
+                onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible },
+            )
 
-                PasswordField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = "Nuova password",
-                    visible = newPasswordVisible,
-                    onToggleVisibility = { newPasswordVisible = !newPasswordVisible },
-                )
+            Spacer(Modifier.height(Spacing.xs))
 
-                PasswordField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = "Conferma password",
-                    visible = confirmPasswordVisible,
-                    onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible },
-                )
-
-                Spacer(Modifier.height(Spacing.xs))
-
-                Button(
-                    onClick = {
-                        // Password safety check
-                        when {
-                            newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
-                            newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
-                            newPassword != confirmPassword -> showSnackbar("Le password non coincidono")
-                            else -> showReauthDialog = true
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(Spacing.xxl),
-                    shape    = MaterialTheme.shapes.large,
-                ) {
-                    Text("Cambia password")
-                }
-
-                Spacer(Modifier.height(Spacing.xs))
-
-                if (showReauthDialog) {
-                    ReauthDialog(
-                        currentPassword = currentPassword,
-                        currentPasswordVisible = currentPasswordVisible,
-                        onPasswordChange = { currentPassword = it },
-                        onToggleVisibility = { currentPasswordVisible = !currentPasswordVisible },
-                        onDismiss = {
-                            showReauthDialog = false
-                            currentPassword = ""
-                            currentPasswordVisible = false
-                        },
-                        onConfirm = {
-                            showReauthDialog = false
-                            onSaveNewPassword(currentPassword, newPassword)
-                            // Optimistically clear fields; errors surface via snackbar
-                            newPassword = ""
-                            confirmPassword = ""
-                            currentPassword = ""
-                            currentPasswordVisible = false
-                        },
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(Spacing.xl))
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
-
-            OutlinedButton(
-                onClick = onLogOut,
-                modifier = Modifier.fillMaxWidth().height(Spacing.xxl),
+            Button(
+                onClick = {
+                    when {
+                        newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
+                        newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
+                        newPassword != confirmPassword -> showSnackbar("Le password non coincidono")
+                        else -> showReauthDialog = true
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(Spacing.xxl),
                 shape = MaterialTheme.shapes.large,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error,
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
             ) {
-                Text("Logout")
+                Text("Cambia password")
             }
 
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.xs))
+
+            if (showReauthDialog) {
+                ReauthDialog(
+                    currentPassword = currentPassword,
+                    currentPasswordVisible = currentPasswordVisible,
+                    onPasswordChange = { currentPassword = it },
+                    onToggleVisibility = { currentPasswordVisible = !currentPasswordVisible },
+                    onDismiss = {
+                        showReauthDialog = false
+                        currentPassword = ""
+                        currentPasswordVisible = false
+                    },
+                    onConfirm = {
+                        showReauthDialog = false
+                        actions.saveNewPassword(currentPassword, newPassword)
+                        // Optimistically clear fields; errors surface via snackbar
+                        newPassword = ""
+                        confirmPassword = ""
+                        currentPassword = ""
+                        currentPasswordVisible = false
+                    },
+                )
+            }
         }
+
+        Spacer(Modifier.height(Spacing.xl))
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
+
+        OutlinedButton(
+            onClick = actions.logout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(Spacing.xxl),
+            shape = MaterialTheme.shapes.large,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error,
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+        ) {
+            Text("Logout")
+        }
+
+        Spacer(Modifier.height(Spacing.md))
     }
 }
 
 @Composable
 private fun ColumnScope.Avatar(
     photoPickerLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
-    settingsInfo: SettingsInfo
+    state: SettingsState
 ) {
     Box(
         modifier = Modifier
@@ -236,11 +234,9 @@ private fun ColumnScope.Avatar(
             },
         contentAlignment = Alignment.Center
     ) {
-        val avatarUrl = settingsInfo.avatarUrl
-
-        if (avatarUrl != null) {
+        if (state.avatarUrl != null) {
             AsyncImage(
-                model = avatarUrl,
+                model = state.avatarUrl,
                 contentDescription = "Avatar",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
@@ -422,21 +418,5 @@ private fun ReauthDialog(
                 Text("Annulla")
             }
         },
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ProfileTopBar(onBack: () -> Unit) {
-    CenterAlignedTopAppBar(
-        title = { AppBarText() },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Indietro"
-                )
-            }
-        }
     )
 }
