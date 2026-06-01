@@ -142,8 +142,7 @@ fun CorsaNavGraph(
                     RunDetailScreen(
                         navController = navController,
                         state = state,
-                        toggleLike = runDetailViewModel::toggleLike,
-                        onAddComment = runDetailViewModel::onAddComment
+                        actions = runDetailViewModel.runDetailActions
                     )
                 }
                 composable<CorsaRoute.SharedRunScreen> {
@@ -152,8 +151,7 @@ fun CorsaNavGraph(
                     RunDetailScreen(
                         navController = navController,
                         state = state,
-                        toggleLike = runDetailViewModel::toggleLike,
-                        onAddComment = runDetailViewModel::onAddComment
+                        actions = runDetailViewModel.runDetailActions
                     )
                 }
                 composable<CorsaRoute.ProfileDetailScreen> {

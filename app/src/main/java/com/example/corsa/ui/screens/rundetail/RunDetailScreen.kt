@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.rundetail
 
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
@@ -49,6 +50,7 @@ import com.example.corsa.data.model.Profile
 import com.example.corsa.data.model.Run
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.screens.splash.SplashScreen
+import com.example.corsa.utils.AppError
 import com.example.corsa.utils.latLngs
 import com.example.corsa.utils.parseRunGeoJson
 
@@ -63,79 +65,97 @@ private const val ROUTE_WIDTH     = 5f
 fun RunDetailScreen(
     navController: NavController,
     state: RunDetailState,
-    toggleLike: () -> Unit,
-    onAddComment: (String) -> Unit
+    actions: RunDetailActions
 ) {
     val context = LocalContext.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state) {
+        when(state.error) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            else -> {}
+        }
+    }
+
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
 
-    when (val state = state) {
-        is RunDetailState.Loading -> SplashScreen()
-        is RunDetailState.Error -> RunDetailError(message = state.message)
-        is RunDetailState.Success -> {
-            BottomSheetScaffold(
-                scaffoldState = sheetState,
-                topBar = {
-                    BackTopBar(
-                        navController = navController,
-                        actions = {
-                            IconButton(onClick = {
-                                val shareUrl = "corsa://run/${state.run.shareToken}"
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "Check out my run on Corsa! $shareUrl"
-                                    )
-                                }
-                                context.startActivity(
-                                    Intent.createChooser(intent, "Share run via")
-                                )
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Share run"
-                                )
-                            }
+    if (state.isLoading) {
+        SplashScreen()
+    } else {
+        BottomSheetScaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            scaffoldState = sheetState,
+            topBar = {
+                BackTopBarWithShareRun(navController, state, context)
+            },
+            sheetPeekHeight = 260.dp,
+            sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            sheetContainerColor = MaterialTheme.colorScheme.surface,
+            sheetContent = {
+                RunDetailSheetContent(
+                    run = state.run,
+                    comments = state.comments,
+                    likeCount = state.likeCount,
+                    runnerProfile = state.runnerProfile,
+                    onProfileNavigation = { userId ->
+                        if (userId == state.myUserId) {
+                            navController.navigate(CorsaRoute.StatsScreen)
+                        } else {
+                            navController.navigate(CorsaRoute.ProfileDetailScreen(userId))
                         }
-                    )
-                },
-                sheetPeekHeight = 260.dp,
-                sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surface,
-                sheetContent = {
-                    RunDetailSheetContent(
-                        run = state.run,
-                        comments = state.comments,
-                        likeCount = state.likeCount,
-                        runnerProfile = state.runnerProfile,
-                        onProfileNavigation = { userId ->
-                            if (userId == state.myUserId) {
-                                navController.navigate(CorsaRoute.StatsScreen)
-                            } else {
-                                navController.navigate(CorsaRoute.ProfileDetailScreen(userId))
-                            }
-                        },
-                        toggleLike = toggleLike,
-                        alreadyLiked = state.alreadyLiked,
-                        onAddComment = onAddComment,
-                        spacing = Spacing.md,
+                    },
+                    toggleLike = actions.toggleLike,
+                    alreadyLiked = state.alreadyLiked,
+                    onAddComment = actions.onAddComment,
+                    spacing = Spacing.md,
+                )
+            }
+        ) { paddingValues ->
+            RunDetailMap(
+                geoJson = state.run.path.toString(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BackTopBarWithShareRun(
+    navController: NavController,
+    state: RunDetailState,
+    context: Context
+) {
+    BackTopBar(
+        navController = navController,
+        actions = {
+            IconButton(onClick = {
+                val token = state.run.shareToken ?: return@IconButton
+                val shareUrl = "corsa://run/$token"
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Check out my run on Corsa! $shareUrl"
                     )
                 }
-            ) { paddingValues ->
-                RunDetailMap(
-                    geoJson = state.run.path.toString(),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                context.startActivity(
+                    Intent.createChooser(intent, "Share run via")
+                )
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Share run"
                 )
             }
         }
-    }
+    )
 }
 
 @Composable
