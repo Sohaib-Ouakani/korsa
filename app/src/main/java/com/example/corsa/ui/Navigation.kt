@@ -130,7 +130,9 @@ fun CorsaNavGraph(
 
                 composable<CorsaRoute.FollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
-                    FollowScreen(navController = navController, friendsVM)
+                    val followState by friendsVM.followState.collectAsStateWithLifecycle()
+                    val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
+                    FollowScreen(navController = navController, followState, searchState, friendsVM.followAction)
                 }
                 composable<CorsaRoute.SettingsScreen> {
                     val settingsViewModel = koinViewModel<SettingsViewModel>()
@@ -165,7 +167,8 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.AddFollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
-                    AddFollowScreen(navController, friendsVM)
+                    val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
+                    AddFollowScreen(navController, searchState, friendsVM.followAction)
                 }
             }
         }

@@ -41,6 +41,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,17 +58,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
-import com.example.corsa.ui.theme.CorsaTheme
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 
 enum class StatsTab(val label: String) {
     Rank("Classifica"),
@@ -77,20 +77,30 @@ enum class StatsTab(val label: String) {
 @Composable
 fun FollowScreen(
     navController: NavController,
-    viewModel: FollowingViewModel
+    followState: FollowState,
+    searchState: SearchState,
+    action: FollowAction
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(followState) {
+        when(followState.error) {
+            is AppError.Present -> snackbarHostState.showSnackbar(followState.error.message)
+            else -> {}
+        }
+    }
     var selectedTab by remember { mutableStateOf(StatsTab.Rank) }
     val tabs = StatsTab.entries
-    val cs = MaterialTheme.colorScheme
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
-            viewModel.refreshFriends()
+            action.refreshFriends()
         }
     }
     Scaffold(
         topBar = { TopBar(navController) },
         bottomBar = { BottomBar(navController) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = { FloatingActionButton(
             onClick = { navController.navigate(CorsaRoute.AddFollowScreen) },
             modifier = Modifier.size(56.dp)
@@ -102,20 +112,9 @@ fun FollowScreen(
             // ── first Space  ────────────────────────────────────────────────
 
             Spacer(Modifier.height(16.dp))
-            // ── Hero headline ────────────────────────────────────────────────
-
-//            Text(
-//                text = "AMICIZIA \n YEE!!!",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(horizontal = Spacing.lg),
-//                color = cs.onSurface,
-//                style = MaterialTheme.typography.titleMedium,
-//                textAlign = TextAlign.Center,
-//            )
             // ── Search bar  ────────────────────────────────────────────────
             //TODO
-            FriendSearchBar(viewModel, navController)
+            FriendSearchBar(searchState, navController)
             // ── Primary Row  ────────────────────────────────────────────────
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
                 tabs.forEach { tab ->
@@ -128,8 +127,8 @@ fun FollowScreen(
             }
 
             when (selectedTab) {
-                StatsTab.Rank -> Rank(viewModel, navController)
-                StatsTab.Feed -> Feed(viewModel, navController)
+                StatsTab.Rank -> Rank(followState, navController, action)
+                StatsTab.Feed -> Feed(followState, navController)
             }
         }
     }
@@ -138,9 +137,19 @@ fun FollowScreen(
 // ── Feed part  ────────────────────────────────────────────────
 
 @Composable
-fun Feed(viewModel: FollowingViewModel, navController: NavController) {
-    val entries by viewModel.feedEntry.collectAsStateWithLifecycle()
-    FeedList(entries = entries, navController)
+fun Feed(state: FollowState, navController: NavController) {
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+    FeedList(state.feedEntry, navController)
+        }
 }
 
 
@@ -250,13 +259,13 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController) {
     }
 }
 
+// ── Searchbar part  ────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendSearchBar(viewModel: FollowingViewModel, navController: NavController) {
+fun FriendSearchBar(searchState: SearchState, navController: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val searchStatus by viewModel.searchStatus.collectAsStateWithLifecycle()  // ← collect
-    val allFriends = searchStatus.friendsName
+    val allFriends = searchState.friendsName
     val filteredFriends = if (query.isBlank()) {
         emptyList()
     } else {
@@ -374,14 +383,13 @@ enum class RankTab(val label: String) {
 }
 
 @Composable
-fun Rank(viewModel: FollowingViewModel, navController: NavController) {
+fun Rank(followState: FollowState, navController: NavController, action: FollowAction) {
     var rankSelectedTab by remember { mutableStateOf(RankTab.Kilometers) }
     val tabs = RankTab.entries
-    val entries by viewModel.rankEntries.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isRankLoading.collectAsStateWithLifecycle()
+
 
     LaunchedEffect(rankSelectedTab) {
-        viewModel.loadRanking(
+         action.loadRanking(
             when (rankSelectedTab) {
                 RankTab.Kilometers -> SortBy.Kilometers
                 RankTab.Level      -> SortBy.Level
@@ -400,7 +408,7 @@ fun Rank(viewModel: FollowingViewModel, navController: NavController) {
             }
         }
 
-        if (isLoading) {
+        if (followState.isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -411,7 +419,7 @@ fun Rank(viewModel: FollowingViewModel, navController: NavController) {
             }
         } else {
             RankList(
-                entries = entries,
+                entries = followState.rankEntry,
                 sortBy  = when (rankSelectedTab) {
                     RankTab.Kilometers -> SortBy.Kilometers
                     RankTab.Level      -> SortBy.Level

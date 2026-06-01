@@ -18,11 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.CorsaRoute
@@ -34,17 +30,18 @@ import com.example.corsa.ui.composables.BottomBar
 @Composable
 fun AddFollowScreen(
     navController: NavController,
-    viewModel: FollowingViewModel
+    searchState: SearchState,
+    action: FollowAction
 ) {
     var query by remember { mutableStateOf("") }
 
     // Replace with real ViewModel state
-    val searchStatus by viewModel.searchStatus.collectAsStateWithLifecycle()  // ← collect
 
-    val results = if (query.isBlank()) {
-        searchStatus.notFriends
+
+     if (query.isBlank()) {
+        searchState.notFriends
     } else {
-        searchStatus.notFriends.filter { it.username.contains(query, ignoreCase = true) }
+        searchState.notFriends.filter { it.username.contains(query, ignoreCase = true) }
     }
 
     Scaffold(
@@ -60,28 +57,10 @@ fun AddFollowScreen(
         ) {
 
             // ── Search bar ────────────────────────────────────────────────
-            SearchBar(viewModel, navController)
+            SearchBar(searchState, action, navController)
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Results / suggestions list ────────────────────────────────
-//            if (query.isBlank()) {
-//                SectionLabel("Suggested for you")
-//            } else {
-//                SectionLabel("Results for \"$query\"")
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            if (results.isEmpty()) {
-//                EmptyState(query)
-//            } else {
-//                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-//                    items(results, key = { it }) { user ->
-//                        UserRow(user = user)
-//                    }
-//                }
-//            }
         }
     }
 }
@@ -89,11 +68,11 @@ fun AddFollowScreen(
 // ── Search bar component ──────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
+fun SearchBar(searchState: SearchState,
+              action: FollowAction, navController: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val searchStatus by viewModel.searchStatus.collectAsStateWithLifecycle()  // ← collect
-    val suggested = searchStatus.notFriends
+    val suggested = searchState.notFriends
     val filteredSuggested = if (query.isBlank()) {
         suggested
     } else {
@@ -138,7 +117,7 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
             )
         },
         expanded = expanded,
-        onExpandedChange = { expanded = it },
+        onExpandedChange = {},
         shape = searchBarShape,
         windowInsets = WindowInsets(0.dp),
         modifier = Modifier
@@ -164,7 +143,7 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 val avatarUrl = friend.avatarPath?.let {
-                                    viewModel.buildAvatarUrl(it)
+                                    action.buildAvatarUrl(it)
                                 }
                                 if (avatarUrl != null) {
                                     AsyncImage(
@@ -196,7 +175,6 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
                         modifier = Modifier.clickable {
                             query = friend.username
                             navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
-                            expanded = false
                         }
                     )
                 }
@@ -219,7 +197,6 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
                         )
                     },
                     modifier = Modifier.clickable {
-                        expanded = false
                     }
                 )
             }
@@ -227,80 +204,6 @@ fun SearchBar(viewModel: FollowingViewModel, navController: NavController) {
     }
 }
 
-// ── Section label ─────────────────────────────────────────────────────────────
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.5.sp
-    )
-}
 
-// ── Single user row ───────────────────────────────────────────────────────────
-@Composable
-private fun UserRow(user: String) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Avatar placeholder (replace with AsyncImage / Coil)
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = user,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Name + username
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = user,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 15.sp
-            )
-        }
-    }
-}
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-@Composable
-private fun EmptyState(query: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 60.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp)
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "No results for \"$query\"",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Try searching by full name or username",
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center
-        )
-    }
-}

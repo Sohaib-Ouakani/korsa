@@ -89,16 +89,13 @@ class ProfilesRepositoryImpl(
             }
             .decodeList<Follow>()
 
-        val excludedIds = (follows.map { it.followingId } + currentProfileId)
-            .joinToString(",")
+        val excludedIds = (follows.map { it.followingId } + currentProfileId).toSet()
 
-        return supabase.postgrest["profiles"]
-            .select {
-                filter {
-                    raw("id=not.in.($excludedIds)")
-                }
-            }
+        val allProfiles = supabase.postgrest["profiles"]
+            .select()
             .decodeList<Profile>()
+
+        return allProfiles.filter { it.id !in excludedIds }
     }
 
     override suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean {
