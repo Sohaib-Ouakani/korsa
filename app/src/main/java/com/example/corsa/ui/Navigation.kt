@@ -46,7 +46,8 @@ sealed interface CorsaRoute {
     @Serializable data class ProfileDetailScreen(val userId: String) : CorsaRoute
 
     @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
-    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute  // ← add this
+    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute
+    @Serializable data object ResetPasswordScreen: CorsaRoute
 }
 
 @Composable
@@ -58,14 +59,16 @@ fun CorsaNavGraph(
     val startDestination by sessionViewModel.startDestination.collectAsStateWithLifecycle()
 
     LaunchedEffect(deepLinkUri) {
-        if (deepLinkUri != null) {
-            val uri = deepLinkUri.toUri()
-            if (uri.scheme == "corsa" && uri.host == "run") {
-                val token = uri.lastPathSegment
-                if (token != null) {
-                    navController.navigate(CorsaRoute.SharedRunScreen(token))
-                }
-            }
+        when (val link = deepLinkUri?.let { DeepLink.parse(it) }) {
+            is DeepLink.SharedRun -> navController.navigate(CorsaRoute.SharedRunScreen(link.token))
+            is DeepLink.ResetPassword -> sessionViewModel.handleResetPasswordDeepLink(deepLinkUri)
+            else -> Unit
+        }
+    }
+
+    LaunchedEffect(startDestination) {
+        if (startDestination == StartDestination.ResetPassword) {
+            navController.navigate(CorsaRoute.ResetPasswordScreen)
         }
     }
 
@@ -167,6 +170,30 @@ fun CorsaNavGraph(
                     val friendsVM = koinViewModel<FollowingViewModel>()
                     AddFollowScreen(navController, friendsVM)
                 }
+                composable<CorsaRoute.ResetPasswordScreen> {
+                    SplashScreen() //TODO
+                }
+            }
+        }
+    }
+}
+
+private sealed class DeepLink {
+    data class SharedRun(val token: String) : DeepLink()
+    object ResetPassword : DeepLink()
+    object Unknown : DeepLink()
+
+    companion object {
+        fun parse(uriString: String): DeepLink {
+            val uri = uriString.toUri()
+            if (uri.scheme != "corsa") return Unknown
+
+            return when (uri.host) {
+                "run" -> uri.lastPathSegment
+                    ?.let { SharedRun(it) }
+                    ?: Unknown
+                "reset-password" -> ResetPassword
+                else -> Unknown
             }
         }
     }

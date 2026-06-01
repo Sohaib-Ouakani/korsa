@@ -17,6 +17,7 @@ data class AuthState(
 data class AuthActions(
     val loginWithEmail: (email: String, password: String) -> Unit,
     val registerWithEmail: (email: String, password: String) -> Unit,
+    val resetPassword: (email: String) -> Unit
 )
 
 class AuthViewModel(
@@ -25,7 +26,8 @@ class AuthViewModel(
 
     val authActions = AuthActions(
         loginWithEmail = ::loginWithEmail,
-        registerWithEmail = ::registerWithEmail
+        registerWithEmail = ::registerWithEmail,
+        resetPassword = :: resetPassword,
     )
 
     private val _authState = MutableStateFlow(AuthState(
@@ -64,6 +66,22 @@ class AuthViewModel(
             } finally {
                 _authState.updateState(
                     isLoading = false
+                )
+            }
+        }
+    }
+
+    private fun resetPassword(email: String) {
+        viewModelScope.launch {
+            _authState.updateState(
+                // loading here would feel strange
+                error = AppError.Absent,
+            )
+            try {
+                repository.resetPassword(email)
+            } catch (e: Exception) {
+                _authState.updateState(
+                    error = AppError.Present(e.message ?: "Error while resetting password with email")
                 )
             }
         }

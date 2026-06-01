@@ -4,7 +4,9 @@ package com.example.corsa.data.repositories
 import android.util.Log
 import com.example.corsa.data.model.Profile
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.parseFragmentAndImportSession
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -15,7 +17,9 @@ interface AuthRepository {
     suspend fun logout()
     suspend fun getEmail(): String
     suspend fun updatePassword(oldPassword: String, newPassword: String)
+    suspend fun resetPassword(email: String)
     fun isEmailUser(): Boolean
+    suspend fun handleResetPasswordDeepLink(uri: String)
     val sessionStatus: Flow<SessionStatus>
 }
 
@@ -72,11 +76,23 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun resetPassword(email: String) {
+        supabase.auth.resetPasswordForEmail(
+            email = email,
+            redirectUrl = "corsa://reset-password"
+        )
+    }
+
     override fun isEmailUser(): Boolean {
         val identities = supabase.auth.currentUserOrNull()?.identities
             ?: return false
 
         return identities.any { it.provider == "email" }
+    }
+
+    @OptIn(SupabaseInternal::class)
+    override suspend fun handleResetPasswordDeepLink(uri: String) {
+        supabase.auth.parseFragmentAndImportSession(uri)
     }
 
     private fun requireEmailProvider() {

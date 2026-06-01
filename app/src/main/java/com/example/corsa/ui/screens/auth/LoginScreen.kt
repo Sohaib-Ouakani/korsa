@@ -34,18 +34,27 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
-    val supabase = koinInject<SupabaseClient>() // This is needed here for the composable
-
+    val supabase = koinInject<SupabaseClient>()
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
-
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
-        when(state.error) {
+        when (state.error) {
             is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
+    }
+
+    if (showResetDialog) {
+        PasswordResetDialog(
+            onDismiss = { showResetDialog = false },
+            onConfirm = { resetEmail ->
+                authActions.resetPassword(resetEmail)
+                showResetDialog = false
+            }
+        )
     }
 
     Scaffold(
@@ -74,6 +83,7 @@ fun LoginScreen(
                     passwordVisible = passwordVisible,
                     onToggleVisibility = { passwordVisible = !passwordVisible }
                 )
+                ForgotPasswordButton(onClick = { showResetDialog = true })
                 LoginDivider()
                 GoogleButton(
                     onClick = { googleAuthState.startFlow() },
@@ -84,6 +94,61 @@ fun LoginScreen(
                     isLoading = state.isLoading
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PasswordResetDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var resetEmail by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reimposta password") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text(
+                    text = "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = resetEmail,
+                    onValueChange = { resetEmail = it },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(resetEmail) },
+                enabled = resetEmail.isNotBlank()
+            ) {
+                Text("Invia")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
+}
+
+@Composable
+private fun ForgotPasswordButton(onClick: () -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
+            Text(
+                text = "Password dimenticata?",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
