@@ -23,7 +23,7 @@ import java.util.Locale
 import kotlin.collections.plus
 import kotlin.time.Clock
 
-data class RunAction(
+data class RunActions(
     val start: () -> Unit,
     val pause: () -> Unit,
     val stop: () -> Unit,
@@ -82,25 +82,29 @@ class RunViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationProvider: LocationProvider
 ): ViewModel() {
-    val runActions = RunAction(
-        { start() },
-        { pause() },
-        { stop() }
+    val runActions = RunActions(
+        ::start,
+        ::pause,
+        ::stop
     )
-    private val MIN_RUN_DURATION_MS = 10_000L
-    private val _profile = MutableStateFlow<Profile?>(null)
-    private val profile: StateFlow<Profile?> = _profile
+    companion object {
+        private const val MIN_RUN_DURATION_MS = 10_000L
+        private const val GPS_INTERVAL_MS = 3_000L
+        private const val STOPWATCH_TICK_MS = 200L
+    }
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     private val _runState = MutableStateFlow(RunState())
-    private val runState: StateFlow<RunState> = _runState
-    private var trackingJob: Job? = null
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    private val stopWatchState: StateFlow<StopWatchState> = _stopWatchState
-    private var stopWatchJob: Job? = null
+    private var _profile: Profile? = null
+    private var _stopWatchJob: Job? = null
+    private var _trackingJob: Job? = null
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState
     ) { sw, run, save ->
-        RunUiState(sw, run, save)
+        val pace = if (run.distanceMeters > 0)
+            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
+        else 0
+        RunUiState(sw, run.copy(currentPaceSecPerKm = pace), save)
     }.stateIn(viewModelScope, SharingStarted.Lazily, RunUiState())
 
     init {
@@ -109,12 +113,17 @@ class RunViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            _profile.value = profilesRepository.getMyProfile()
+            try {
+                _profile = profilesRepository.getMyProfile()
+            } catch (e: Exception) {
+                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
+            }
         }
     }
 
     private fun start() {
         if (_stopWatchState.value.isRunning) return
+
         _stopWatchState.update { it.copy(isRunning = true) }
 
         if (_runState.value.startEpochMs == 0L) {
@@ -125,8 +134,8 @@ class RunViewModel(
     }
 
     private fun startGPSJob() {
-        trackingJob = viewModelScope.launch {
-            locationProvider.locationFlow(intervalMs = 3000L)
+        _trackingJob = viewModelScope.launch {
+            locationProvider.locationFlow(GPS_INTERVAL_MS)
                 .collect { location ->
                     val newPoint = TrackingPoint(
                         location.latitude,
@@ -150,15 +159,9 @@ class RunViewModel(
 
                         val totalDistance = current.distanceMeters + addedMeters
 
-                        val elapsedSeconds = _stopWatchState.value.elapsedTime / 1000f
-                        val pace = if (totalDistance > 0)
-                            (elapsedSeconds / (totalDistance / 1000f)).toInt()
-                        else 0
-
                         current.copy(
                             points = updatedPoints,
                             distanceMeters = totalDistance,
-                            currentPaceSecPerKm = pace
                         )
                     }
                 }
@@ -166,12 +169,13 @@ class RunViewModel(
     }
 
     private fun startStopWatchJob() {
-        stopWatchJob = viewModelScope.launch {
+        _stopWatchJob?.cancel()
+        _stopWatchJob = viewModelScope.launch {
             while (currentCoroutineContext().isActive) {
-                delay(200L)
+                delay(STOPWATCH_TICK_MS)
                 _stopWatchState.update { current ->
                     current.copy(
-                        elapsedTime = current.elapsedTime + 200L
+                        elapsedTime = current.elapsedTime + STOPWATCH_TICK_MS
                     )
                 }
             }
@@ -179,15 +183,15 @@ class RunViewModel(
     }
 
     private fun pause() {
-        stopWatchJob?.cancel()
-        trackingJob?.cancel()
+        _stopWatchJob?.cancel()
+        _trackingJob?.cancel()
         _stopWatchState.update { it.copy(isRunning = false) }
     }
 
 
     private fun stop() {
         pause()
-        if (stopWatchState.value.elapsedTime > MIN_RUN_DURATION_MS) {
+        if (_stopWatchState.value.elapsedTime > MIN_RUN_DURATION_MS) {
             finishRun()
         } else {
             _saveState.value = SaveState.Validation("Run too brief to save")
@@ -196,10 +200,13 @@ class RunViewModel(
     }
 
     private fun finishRun() {
-        val userId = profile.value?.id ?: return
-        val run    = runState.value
+        val userId = _profile?.id ?: run {
+            _saveState.value = SaveState.Error("Profile not loaded, run not saved")
+            reset()
+            return
+        }
+        val run    = _runState.value
         val endMs  = Clock.System.now().toEpochMilliseconds()
-        reset()
 
         if (run.points.size < 2) {
             _saveState.value = SaveState.Validation("Run too short to save")
@@ -208,6 +215,7 @@ class RunViewModel(
 
         viewModelScope.launch {
             saveNewRun(userId, run, endMs)
+            reset()
         }
     }
 
@@ -217,7 +225,7 @@ class RunViewModel(
         endMs: Long
     ) {
         _saveState.value = SaveState.Saving
-        runCatching {
+        try {
             runsRepository.saveRun(
                 userId = userId,
                 startEpochMs = run.startEpochMs,
@@ -226,9 +234,8 @@ class RunViewModel(
                 distanceMeters = run.distanceMeters,
                 meanPaceSecPerKm = run.currentPaceSecPerKm,
             )
-        }.onSuccess {
             _saveState.value = SaveState.Success
-        }.onFailure { e ->
+        } catch (e: Exception) {
             _saveState.value = SaveState.Error(e.message ?: "Unknown error")
         }
     }
@@ -240,7 +247,7 @@ class RunViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        stopWatchJob?.cancel()
-        trackingJob?.cancel()
+        _stopWatchJob?.cancel()
+        _trackingJob?.cancel()
     }
 }

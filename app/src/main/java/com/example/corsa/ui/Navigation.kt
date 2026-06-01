@@ -18,7 +18,6 @@ import com.example.corsa.ui.screens.friends.AddFollowScreen
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
-import com.example.corsa.ui.screens.home.StopWatchScreen
 import com.example.corsa.ui.screens.settings.SettingsScreen
 import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailScreen

@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
+import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 
@@ -34,7 +35,7 @@ import com.example.corsa.ui.theme.Spacing
 fun StopWatchScreen(
     state: RunUiState,
     navController: NavController,
-    actions: RunAction,
+    actions: RunActions,
 ){
     val cs = MaterialTheme.colorScheme
     val saveState = state.saveState
@@ -59,6 +60,9 @@ fun StopWatchScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
+        if (saveState is SaveState.Saving) {
+            SplashScreen()
+        }
         Column(
             modifier = Modifier
                 .background(cs.primary)
