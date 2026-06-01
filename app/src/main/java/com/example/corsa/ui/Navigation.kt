@@ -18,7 +18,7 @@ import com.example.corsa.ui.screens.friends.AddFollowScreen
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
-import com.example.corsa.ui.screens.home.run.StopWatchScreen
+import com.example.corsa.ui.screens.home.StopWatchScreen
 import com.example.corsa.ui.screens.settings.SettingsScreen
 import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailScreen
@@ -32,6 +32,7 @@ import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
 import com.example.corsa.ui.screens.home.run.RunViewModel
+import com.example.corsa.ui.screens.home.run.StopWatchScreen
 
 sealed interface CorsaRoute {
     @Serializable data object Home : CorsaRoute
@@ -118,8 +119,12 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.StatsScreen> {
                     val statsViewModel = koinViewModel<StatsScreenViewModel>()
-                    val userEntry by statsViewModel.profile.collectAsStateWithLifecycle()
-                    userEntry?.let { StatsScreen(navController, statsViewModel) }
+                    val state by statsViewModel.statsState.collectAsStateWithLifecycle()
+                    StatsScreen(
+                        navController = navController,
+                        state = state,
+                        actions =  statsViewModel.statsActions,
+                    )
                 }
                 composable<CorsaRoute.FollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
@@ -140,8 +145,7 @@ fun CorsaNavGraph(
                     RunDetailScreen(
                         navController = navController,
                         state = state,
-                        toggleLike = runDetailViewModel::toggleLike,
-                        onAddComment = runDetailViewModel::onAddComment
+                        actions = runDetailViewModel.runDetailActions
                     )
                 }
                 composable<CorsaRoute.SharedRunScreen> {
@@ -150,8 +154,7 @@ fun CorsaNavGraph(
                     RunDetailScreen(
                         navController = navController,
                         state = state,
-                        toggleLike = runDetailViewModel::toggleLike,
-                        onAddComment = runDetailViewModel::onAddComment
+                        actions = runDetailViewModel.runDetailActions
                     )
                 }
                 composable<CorsaRoute.ProfileDetailScreen> {

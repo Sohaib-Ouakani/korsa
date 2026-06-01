@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.model.ProfileUpdate
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.ProfilesRepository
+import com.example.corsa.utils.AppError
 import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,7 @@ data class SettingsState(
     val currentEmail: String = "",
     val isEmailUser: Boolean = false,
     val avatarUrl: String? = null,
-    val error: String? = null,
+    val error: AppError = AppError.Absent,
 )
 
 data class SettingsActions(
@@ -56,7 +57,6 @@ class SettingsViewModel(
                 val email = authRepository.getEmail()
                 val isEmailUser = authRepository.isEmailUser()
                 _settingsState.updateState(
-                    isLoading = false,
                     currentUsername = profile.username,
                     currentEmail = email,
                     isEmailUser = isEmailUser,
@@ -65,10 +65,10 @@ class SettingsViewModel(
                             profilesRepository.avatarUrl(it) + "?t=${profile.updatedAt}"
                         }
                     ),
-                    error = Option.Present(null),  // clear any previous error on successful load
+                    error = AppError.Absent,
                 )
             } catch (e: Exception) {
-                _settingsState.updateState(error = Option.Present(e.message ?: "Error while loading profile"))
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while loading profile"))
             } finally {
                 _settingsState.updateState(isLoading = false)
             }
@@ -79,12 +79,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             _settingsState.updateState(
                 isLoading = true,
-                error = Option.Present(null),
+                error = AppError.Absent,
             )
             try {
                 authRepository.logout()
             } catch (e: Exception) {
-                _settingsState.updateState(error = Option.Present(e.message ?: "Error while logging out"))
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while logging out"))
             } finally {
                 _settingsState.updateState(isLoading = false)
             }
@@ -95,13 +95,13 @@ class SettingsViewModel(
         viewModelScope.launch {
             _settingsState.updateState(
                 isLoading = true,
-                error = Option.Present(null),
+                error = AppError.Absent,
             )
             try {
                 val updatedProfile = profilesRepository.updateProfile(ProfileUpdate(username = newUsername.trim()))
                 _settingsState.updateState(currentUsername = updatedProfile.username)
             } catch (e: Exception) {
-                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating username"))
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while updating username"))
             } finally {
                 _settingsState.updateState(isLoading = false)
             }
@@ -112,12 +112,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             _settingsState.updateState(
                 isLoading = true,
-                error = Option.Present(null),
+                error = AppError.Absent,
             )
             try {
                 authRepository.updatePassword(oldPassword.trim(), newPassword.trim())
             } catch (e: Exception) {
-                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating password"))
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while updating password"))
             } finally {
                 _settingsState.updateState(isLoading = false)
             }
@@ -128,14 +128,14 @@ class SettingsViewModel(
         viewModelScope.launch {
             _settingsState.updateState(
                 isLoading = true,
-                error = Option.Present(null),
+                error = AppError.Absent,
             )
             try {
                 val newPath = profilesRepository.uploadAvatar(imageBytes, mimeType)
                 val newUrl = profilesRepository.avatarUrl(newPath) + "?t=${System.currentTimeMillis()}"
                 _settingsState.updateState(avatarUrl = Option.Present(newUrl))
             } catch (e: Exception) {
-                _settingsState.updateState(error = Option.Present(e.message ?: "Error while updating avatar"))
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while updating avatar"))
             } finally {
                 _settingsState.updateState(isLoading = false)
             }
@@ -143,7 +143,7 @@ class SettingsViewModel(
     }
 
     private fun clearError() {
-        _settingsState.updateState(error = Option.Present(null))
+        _settingsState.updateState(error = AppError.Absent)
     }
 
     private fun MutableStateFlow<SettingsState>.updateState(
@@ -152,7 +152,7 @@ class SettingsViewModel(
         currentEmail: String? = null,
         isEmailUser: Boolean? = null,
         avatarUrl: Option<String> = Option.Absent,
-        error: Option<String> = Option.Absent,
+        error: AppError? = null,
     ) {
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
@@ -163,10 +163,7 @@ class SettingsViewModel(
                 is Option.Absent -> value.avatarUrl
                 is Option.Present -> avatarUrl.value
             },
-            error = when (error) {
-                is Option.Absent -> value.error
-                is Option.Present -> error.value
-            },
+            error = error ?: value.error,
         )
     }
 }
