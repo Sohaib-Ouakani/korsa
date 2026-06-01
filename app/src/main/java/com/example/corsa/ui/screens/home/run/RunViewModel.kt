@@ -83,7 +83,7 @@ class RunViewModel(
     val runActions = RunAction(
         { start() },
         { pause() },
-        { reset() }
+        { stop() }
     )
     private val _profile = MutableStateFlow<Profile?>(null)
     private val profile: StateFlow<Profile?> = _profile
@@ -175,17 +175,13 @@ class RunViewModel(
     }
 
 
-    private fun reset() {
+    private fun stop() {
         pause()
         if (_stopWatchState.value.elapsedTime > 10) {
             finishRun()
         } else {
-            _stopWatchState.update { current ->
-                current.copy(
-                    elapsedTime = 0L
-                )
-            }
-            _runState.value = RunState()
+            _saveState.value = SaveState.Error("Run too short to save")
+            reset()
         }
     }
 
@@ -193,8 +189,7 @@ class RunViewModel(
         val userId = profile.value?.id ?: return
         val run    = runState.value
         val endMs  = Clock.System.now().toEpochMilliseconds()
-        _stopWatchState.update { it.copy(elapsedTime = 0L) }
-        _runState.value = RunState()
+        reset()
 
         if (run.points.size < 2) {
             _saveState.value = SaveState.Error("Run too short to save")
@@ -202,22 +197,35 @@ class RunViewModel(
         }
 
         viewModelScope.launch {
-            _saveState.value = SaveState.Saving
-            runCatching<Unit> {
-                runsRepository.saveRun(
-                    userId           = userId,
-                    startEpochMs     = run.startEpochMs,
-                    endEpochMs       = endMs,
-                    points           = run.points,
-                    distanceMeters   = run.distanceMeters,
-                    meanPaceSecPerKm = run.currentPaceSecPerKm,
-                )
-            }.onSuccess {
-                _saveState.value = SaveState.Success
-            }.onFailure { e ->
-                _saveState.value = SaveState.Error(e.message ?: "Unknown error")
-            }
+            saveNewRun(userId, run, endMs)
         }
+    }
+
+    private suspend fun saveNewRun(
+        userId: String,
+        run: RunState,
+        endMs: Long
+    ) {
+        _saveState.value = SaveState.Saving
+        runCatching {
+            runsRepository.saveRun(
+                userId = userId,
+                startEpochMs = run.startEpochMs,
+                endEpochMs = endMs,
+                points = run.points,
+                distanceMeters = run.distanceMeters,
+                meanPaceSecPerKm = run.currentPaceSecPerKm,
+            )
+        }.onSuccess {
+            _saveState.value = SaveState.Success
+        }.onFailure { e ->
+            _saveState.value = SaveState.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    private fun reset() {
+        _stopWatchState.update { it.copy(elapsedTime = 0L) }
+        _runState.value = RunState()
     }
 
     override fun onCleared() {
