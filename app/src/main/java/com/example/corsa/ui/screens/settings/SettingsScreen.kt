@@ -137,6 +137,12 @@ private fun MainContent(
         )
 
         if (state.isEmailUser) {
+            Text(
+                text = "Email: ${state.currentEmail}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
             Spacer(Modifier.height(Spacing.md))
             SectionLabel("SICUREZZA")
             Spacer(Modifier.height(Spacing.xs))
