@@ -63,7 +63,6 @@ class StatsScreenViewModel(
         }
     }
 
-
     private fun observeRuns() {
         viewModelScope.launch {
             _statsState.updateState(
