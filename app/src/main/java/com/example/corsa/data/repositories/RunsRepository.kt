@@ -1,9 +1,9 @@
 package com.example.corsa.data.repositories
 
+import com.example.corsa.data.location.TrackingPoint
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.model.Run
 import com.example.corsa.data.model.RunInsert
-import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.rundetail.CommentEntry
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -50,7 +50,7 @@ interface RunsRepository {
         userId: String,
         startEpochMs: Long,
         endEpochMs: Long,
-        points: List<HomeViewModel.TrackingPoint>,
+        points: List<TrackingPoint>,
         distanceMeters: Float,
         meanPaceSecPerKm: Int,
     )
@@ -122,7 +122,7 @@ class RunsRepositoryImpl(
         userId: String,
         startEpochMs: Long,
         endEpochMs: Long,
-        points: List<HomeViewModel.TrackingPoint>,
+        points: List<TrackingPoint>,
         distanceMeters: Float,
         meanPaceSecPerKm: Int,
     ) {
@@ -139,7 +139,7 @@ class RunsRepositoryImpl(
         val startTime = Instant.fromEpochMilliseconds(startEpochMs)
             .toLocalDateTime(TimeZone.currentSystemDefault())
         val temperature = fetchTemperatureForRun(
-            client = httpClient,         // your injected HttpClient
+            client = httpClient,
             lat = points.first().lat,
             lon = points.first().lng,
             startTime = startTime
@@ -160,7 +160,7 @@ class RunsRepositoryImpl(
         supabase.from("runs").insert(run)
     }
 
-    private fun calculateElevationGain(points: List<HomeViewModel.TrackingPoint>): Float? {
+    private fun calculateElevationGain(points: List<TrackingPoint>): Float? {
         val altitudes = points.mapNotNull { it.altitude }
         if (altitudes.size < 2) return null
 
@@ -215,7 +215,6 @@ class RunsRepositoryImpl(
         }
     }
 
-    // Add to RunsRepositoryImpl
     override fun observeRunUpdates(userId: String): Flow<List<Run>> = callbackFlow {
         trySend(getRunsByUserId(userId))
 

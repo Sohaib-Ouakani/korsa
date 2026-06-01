@@ -11,6 +11,7 @@ import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.auth.AuthViewModel
 import com.example.corsa.ui.screens.home.HomeViewModel
+import com.example.corsa.ui.screens.home.run.RunViewModel
 import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
@@ -63,7 +64,8 @@ val appModule = module {
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { StatsScreenViewModel(get(), get()) }
     viewModel { AuthViewModel(get()) }
-    viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get()) }
+    viewModel { RunViewModel(get(), get(), get()) }
     viewModel { FollowingViewModel(get(), get() ) }
     viewModel { params -> RunDetailViewModel(get(), get(),params.get()) }
     viewModel { ProfileDetailViewModel(get(), get(), get()) }

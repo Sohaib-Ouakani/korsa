@@ -1,4 +1,4 @@
-package com.example.corsa.ui.screens.home
+package com.example.corsa.ui.screens.home.run
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.theme.Size
@@ -29,17 +27,15 @@ import com.example.corsa.ui.theme.Spacing
 
 @Composable
 fun StopWatchScreen(
-    status: StopWatchStatus,
+    stopWatchState: StopWatchState,
+    runState: RunState,
+    saveState: SaveState,
     navController: NavController,
-    actions: StopWatchAction,
-    viewModel: HomeViewModel,
+    actions: RunAction,
     onRunSaved: () -> Unit
 ){
     val cs = MaterialTheme.colorScheme
-    val text = if (status.isRunning) "GO!" else "READY?"
-    val timerState by viewModel.timerState.collectAsStateWithLifecycle()
-    val runState   by viewModel.runState.collectAsStateWithLifecycle()
-    val saveState  by viewModel.saveState.collectAsStateWithLifecycle()
+    val text = if (stopWatchState.isRunning) "GO!" else "READY?"
 
     // Navigate home automatically when save succeeds
     LaunchedEffect(saveState) {
@@ -77,12 +73,12 @@ fun StopWatchScreen(
             style = MaterialTheme.typography.titleMedium
         )
         Text(
-            text = status.formattedTime,
+            text = stopWatchState.formattedTime,
             color = cs.onPrimary,
             style = MaterialTheme.typography.displayMedium
         )
         Spacer(Modifier.height(Spacing.lg))
-        if (status.isRunning) {
+        if (stopWatchState.isRunning) {
             IconButton(
                 onClick = { actions.pause() },
                 modifier = Modifier.size(Size.xl)

@@ -13,16 +13,12 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
@@ -33,24 +29,10 @@ import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 
-/**
- * STRIDE – Home Screen (pure View, no ViewModel wiring).
- *
- * Colour mapping used from MaterialTheme.colorScheme:
- *   primary          → lime accent (CTAs, active labels, pace text)
- *   onPrimary        → content on lime (black text/icons inside START button)
- *   background       → dark scaffold background
- *   onBackground     → primary text on background
- *   surface          → card background
- *   onSurface        → primary text on cards
- *   secondary        → subtle surface (icon button backgrounds, progress track)
- *   onSurfaceVariant → muted / secondary text and icons
- */
 @Composable
 fun HomeScreen(
     state: HomeState?,
-    navController: NavController,
-    viewModel: HomeViewModel
+    navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
 
@@ -63,16 +45,15 @@ fun HomeScreen(
         when (permissionState) {
 
             LocationPermissionState.GRANTED -> {
-                Content(cs, navController, state, viewModel)
+                Content(cs, navController, state)
             }
 
             LocationPermissionState.DENIED -> {
-                // First time or "ask again" — show a rationale + button
                 PermissionRationaleScreen(onRequest = requestPermission)
             }
 
             LocationPermissionState.PERMANENTLY_DENIED -> {
-                // User blocked it — we can only send them to Settings
+                //send to Settings
                 PermissionDeniedScreen()
             }
         }
@@ -83,8 +64,7 @@ fun HomeScreen(
 private fun Content(
     cs: ColorScheme,
     navController: NavController,
-    state: HomeState,
-    viewModel: HomeViewModel
+    state: HomeState
 ) {
     Scaffold(
         topBar = { TopBar(navController) },
@@ -105,7 +85,6 @@ private fun Content(
             Spacer(Modifier.height(Spacing.md))
 
             // ── Hero headline ────────────────────────────────────────────────
-            // Uses Typography.displayLarge (ExtraBold Italic 60sp / lh 58sp)
             Text(
                 text = "READY TO\nMOVE?",
                 modifier = Modifier
@@ -119,7 +98,7 @@ private fun Content(
             Spacer(Modifier.height(Spacing.xxl))
 
             // ── START button ─────────────────────────────────────────────────
-            StartButton(cs) { navController.navigate(CorsaRoute.StopWatchScreen) }
+            StartButton(cs) { navController.navigate(CorsaRoute.RunScreen) }
 
             Spacer(Modifier.height(Spacing.xxl))
 
@@ -163,7 +142,6 @@ private fun ColumnScope.StartButton(
                 tint = cs.onPrimary,
                 modifier = Modifier.size(Size.l),
             )
-            // Uses Typography.titleMedium (ExtraBold Italic 28sp)
             Text(
                 text = "START",
                 style = MaterialTheme.typography.titleMedium,
@@ -204,8 +182,8 @@ private fun GoalCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.md),  // was 16.dp → Spacing.md
-        shape = MaterialTheme.shapes.medium,    // was RoundedCornerShape(16.dp) → CorsaShapes.medium (Spacing.md)
+            .padding(horizontal = Spacing.md),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
             modifier = Modifier.padding(Spacing.lg),

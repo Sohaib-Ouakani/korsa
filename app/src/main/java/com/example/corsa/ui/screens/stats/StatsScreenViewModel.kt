@@ -41,7 +41,7 @@ class StatsScreenViewModel(
 
     private fun observeRuns() {
         viewModelScope.launch {
-            val userId = profilesRepository.getMyProfile().id // see note below
+            val userId = profilesRepository.getMyProfile().id
             runsRepository.observeRunUpdates(userId)
                 .collect { runs ->
                     _runs.value = runs

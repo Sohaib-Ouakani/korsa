@@ -18,7 +18,7 @@ import com.example.corsa.ui.screens.friends.AddFollowScreen
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
 import com.example.corsa.ui.screens.home.HomeViewModel
-import com.example.corsa.ui.screens.home.StopWatchScreen
+import com.example.corsa.ui.screens.home.run.StopWatchScreen
 import com.example.corsa.ui.screens.settings.SettingsScreen
 import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailScreen
@@ -31,11 +31,12 @@ import com.example.corsa.ui.screens.stats.StatsScreenViewModel
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
+import com.example.corsa.ui.screens.home.run.RunViewModel
 
 sealed interface CorsaRoute {
     @Serializable data object Home : CorsaRoute
     @Serializable data object AddFollowScreen : CorsaRoute
-    @Serializable data object StopWatchScreen : CorsaRoute
+    @Serializable data object RunScreen : CorsaRoute
     @Serializable data object StatsScreen : CorsaRoute
 
     @Serializable data object FollowScreen : CorsaRoute
@@ -103,16 +104,20 @@ fun CorsaNavGraph(
                 composable<CorsaRoute.Home> {
                     val homeViewModel = koinViewModel<HomeViewModel>()
                     val state by homeViewModel.state.collectAsStateWithLifecycle()
-                    HomeScreen(state, navController, homeViewModel)
+                    HomeScreen(state, navController)
                 }
-                composable<CorsaRoute.StopWatchScreen> {
-                    val homeViewModel = koinViewModel<HomeViewModel>()
-                    val timerState by homeViewModel.timerState.collectAsStateWithLifecycle()
+                composable<CorsaRoute.RunScreen> {
+                    val runViewModel = koinViewModel<RunViewModel>()
+                    val stopWatchState by runViewModel.stopWatchState.collectAsStateWithLifecycle()
+                    val runState by runViewModel.runState.collectAsStateWithLifecycle()
+                    val saveState by runViewModel.saveState.collectAsStateWithLifecycle()
+                    val actions = runViewModel.runActions
                     StopWatchScreen(
-                        timerState,
+                        stopWatchState,
+                        runState,
+                        saveState,
                         navController,
-                        homeViewModel.stopWatchActions,
-                        homeViewModel,
+                        actions = actions,
                         onRunSaved = {
                             navController.navigate(CorsaRoute.Home)
                         }
@@ -121,7 +126,7 @@ fun CorsaNavGraph(
                 composable<CorsaRoute.StatsScreen> {
                     val statsViewModel = koinViewModel<StatsScreenViewModel>()
                     val userEntry by statsViewModel.profile.collectAsStateWithLifecycle()
-                    userEntry?.let { StatsScreen(navController, statsViewModel ) }
+                    userEntry?.let { StatsScreen(navController, statsViewModel) }
                 }
                 composable<CorsaRoute.FollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
