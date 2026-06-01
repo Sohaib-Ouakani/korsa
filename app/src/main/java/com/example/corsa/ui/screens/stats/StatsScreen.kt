@@ -14,21 +14,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
-import com.example.corsa.data.model.Run
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.composables.UserEntry
+import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 
@@ -36,30 +36,40 @@ import com.example.corsa.ui.theme.Spacing
 @Composable
 fun StatsScreen(
     navController: NavController,
-    viewModel: StatsScreenViewModel
+    state: StatsState,
+    actions: StatsActions
 ) {
-    val user by viewModel.profile.collectAsStateWithLifecycle()
-    val runs by viewModel.runs.collectAsStateWithLifecycle()
-    val cs = MaterialTheme.colorScheme
 
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
-            viewModel.refreshProfile()
+    LaunchedEffect(Unit) {
+        actions.refreshProfile()  // re-fetches every time the screen enters composition
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state) {
+        if (state.error != null) {
+            snackbarHostState.showSnackbar(state.error)
         }
     }
+    val cs = MaterialTheme.colorScheme
+
+
     Scaffold(
         topBar = { TopBar(navController) },
         bottomBar = { BottomBar(navController) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { contentPadding ->
         Column(modifier = Modifier.padding(contentPadding)) {
-            if (user != null) {
+            if (!state.isLoading) {
                 ProfileStats(
                     navController,
-                    runs,
-                    user!!,
-                    { ProfileHeader(user!!, cs) }
+                    state.runs,
+                    state.profile,
+                    { ProfileHeader(state.profile, cs) }
                 )
+            }
+            else{
+                SplashScreen()
             }
         }
     }
