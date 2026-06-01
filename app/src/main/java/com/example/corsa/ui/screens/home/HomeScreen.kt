@@ -1,6 +1,7 @@
 package com.example.corsa.ui.screens.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -13,21 +14,25 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.premissions.LocationPermissionHandler
 import com.example.corsa.ui.premissions.LocationPermissionState
+import com.example.corsa.ui.screens.home.run.SaveState
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 
 @Composable
 fun HomeScreen(
@@ -43,7 +48,6 @@ fun HomeScreen(
 
     LocationPermissionHandler { permissionState, requestPermission ->
         when (permissionState) {
-
             LocationPermissionState.GRANTED -> {
                 Content(cs, navController, state)
             }
@@ -66,9 +70,19 @@ private fun Content(
     navController: NavController,
     state: HomeState
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(state) {
+        when(state.appError) {
+            is AppError.Present -> {
+                snackbarHostState.showSnackbar(state.appError.message)
+            }
+            else -> {}
+        }
+    }
     Scaffold(
         topBar = { TopBar(navController) },
-        bottomBar = { BottomBar(navController) }
+        bottomBar = { BottomBar(navController) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -164,11 +178,19 @@ private fun LocationLabel(cs: ColorScheme, locationName: String?) {
             modifier = Modifier.size(Size.s)
         )
         Spacer(Modifier.width(Spacing.sm))
-        Text(
-            text = locationName ?: "...",
-            color = cs.primary,
-            style = MaterialTheme.typography.labelSmall
-        )
+        if (locationName != null){
+            Text(
+                text = locationName,
+                color = cs.primary,
+                style = MaterialTheme.typography.labelSmall
+            )
+        } else {
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(Size.s),
+                strokeWidth = 1.dp,
+            )
+        }
     }
 }
 

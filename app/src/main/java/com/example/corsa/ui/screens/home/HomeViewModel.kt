@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
+import com.example.corsa.utils.AppError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,8 @@ data class HomeState(
     val goalKm: Float,
     val currentKm: Float,
     val progress: Float,
-    val locationName: String?
+    val locationName: String?,
+    val appError: AppError = AppError.Absent
 )
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
@@ -48,35 +50,39 @@ class HomeViewModel(
                 goalKm = goalKm,
                 currentKm = weeklyKm,
                 progress = weeklyKm / goalKm,
-                locationName = null
+                locationName = null,
             )
-
             launch {
-                val cityName = getCityName()
-                _state.update { it?.copy(locationName = cityName) }
+                var cityName: String? = null
+                var appError: AppError = AppError.Absent
+                try {
+                    cityName = getCityName()
+                } catch (e: Exception) {
+                    appError = AppError.Present(e.message ?: "Failed to fetch location")
+                }
+                _state.update { it?.copy(
+                    locationName = cityName,
+                    appError = appError
+                ) }
             }
         }
     }
     private suspend fun getCityName(): String? {
         return withContext(Dispatchers.IO) {
-            try {
-                val location = locationProvider.locationFlow(intervalMs = 0L).first()
-                val url = "https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json"
+            val location = locationProvider.locationFlow(intervalMs = 0L).first()
+            val url = "https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json"
 
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
 
-                val response = connection.inputStream.bufferedReader().readText()
-                val json = JSONObject(response)
+            val response = connection.inputStream.bufferedReader().readText()
+            val json = JSONObject(response)
 
-                val address = json.getJSONObject("address")
-                address.optString("city")
-                    .ifEmpty { address.optString("town") }
-                    .ifEmpty { address.optString("village") }
-                    .ifEmpty { null }
-            } catch (e: Exception) {
-                null
-            }
+            val address = json.getJSONObject("address")
+            address.optString("city")
+                .ifEmpty { address.optString("town") }
+                .ifEmpty { address.optString("village") }
+                .ifEmpty { null }
         }
     }
 }
