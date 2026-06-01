@@ -120,9 +120,14 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.StatsScreen> {
                     val statsViewModel = koinViewModel<StatsScreenViewModel>()
-                    val userEntry by statsViewModel.profile.collectAsStateWithLifecycle()
-                    userEntry?.let { StatsScreen(navController, statsViewModel ) }
+                    val state by statsViewModel.statsState.collectAsStateWithLifecycle()
+                    StatsScreen(
+                        navController = navController,
+                        state = state,
+                        actions =  statsViewModel.statsActions,
+                    )
                 }
+
                 composable<CorsaRoute.FollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
                     FollowScreen(navController = navController, friendsVM)
