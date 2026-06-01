@@ -79,6 +79,7 @@ class HomeViewModel(
             weatherCode = getWeather(location.latitude, location.longitude)
         )
     }
+
     private suspend fun getCityName(lat: Double, lon: Double): String? {
         return withContext(Dispatchers.IO) {
             val url = "https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json"
@@ -96,6 +97,7 @@ class HomeViewModel(
                 .ifEmpty { null }
         }
     }
+
     private suspend fun getWeather(lat: Double, lon: Double): WeatherCondition {
         return withContext(Dispatchers.IO) {
             val weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
