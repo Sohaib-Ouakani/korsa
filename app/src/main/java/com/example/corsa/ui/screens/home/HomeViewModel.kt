@@ -6,6 +6,7 @@ import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
+import com.example.corsa.utils.WeatherCondition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,11 +18,15 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class LocationInfo(
+    val cityName: String? = null,
+    val weatherCode: WeatherCondition = WeatherCondition.UNKNOWN
+)
 data class HomeState(
     val goalKm: Float,
     val currentKm: Float,
     val progress: Float,
-    val locationName: String?,
+    val locationInfo: LocationInfo = LocationInfo(),
     val appError: AppError = AppError.Absent
 )
 class HomeViewModel(
@@ -50,27 +55,33 @@ class HomeViewModel(
                 goalKm = goalKm,
                 currentKm = weeklyKm,
                 progress = weeklyKm / goalKm,
-                locationName = null,
             )
             launch {
-                var cityName: String? = null
+                var locationInfo = LocationInfo()
                 var appError: AppError = AppError.Absent
                 try {
-                    cityName = getCityName()
+                    locationInfo = getLocationInfo()
                 } catch (e: Exception) {
-                    appError = AppError.Present(e.message ?: "Failed to fetch location")
+                    appError = AppError.Present(e.message ?: "Failed to fetch location info")
                 }
                 _state.update { it?.copy(
-                    locationName = cityName,
+                    locationInfo = locationInfo,
                     appError = appError
                 ) }
             }
         }
     }
-    private suspend fun getCityName(): String? {
+
+    private suspend fun getLocationInfo(): LocationInfo{
+        val location = locationProvider.locationFlow(intervalMs = 0L).first()
+        return LocationInfo(
+            cityName = getCityName(location.latitude, location.longitude),
+            weatherCode = getWeather(location.latitude, location.longitude)
+        )
+    }
+    private suspend fun getCityName(lat: Double, lon: Double): String? {
         return withContext(Dispatchers.IO) {
-            val location = locationProvider.locationFlow(intervalMs = 0L).first()
-            val url = "https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json"
+            val url = "https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json"
 
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
@@ -83,6 +94,16 @@ class HomeViewModel(
                 .ifEmpty { address.optString("town") }
                 .ifEmpty { address.optString("village") }
                 .ifEmpty { null }
+        }
+    }
+    private suspend fun getWeather(lat: Double, lon: Double): WeatherCondition {
+        return withContext(Dispatchers.IO) {
+            val weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+            val weatherConn = URL(weatherUrl).openConnection() as HttpURLConnection
+            val weatherJson = JSONObject(weatherConn.inputStream.bufferedReader().readText())
+            val weatherCode = weatherJson.getJSONObject("current").optInt("weather_code")
+
+            WeatherCondition.fromWmoCode(weatherCode)
         }
     }
 }
