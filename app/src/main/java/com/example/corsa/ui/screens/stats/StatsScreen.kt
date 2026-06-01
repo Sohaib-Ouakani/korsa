@@ -31,6 +31,7 @@ import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 
 
 @Composable
@@ -47,8 +48,9 @@ fun StatsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
-        if (state.error != null) {
-            snackbarHostState.showSnackbar(state.error)
+        when (state.error ) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            else -> {}
         }
     }
     val cs = MaterialTheme.colorScheme

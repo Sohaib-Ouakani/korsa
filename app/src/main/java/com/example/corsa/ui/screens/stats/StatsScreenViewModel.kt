@@ -6,6 +6,7 @@ import com.example.corsa.data.model.Run
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.ui.composables.UserEntry
+import com.example.corsa.utils.AppError
 import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +16,7 @@ data class StatsState(
     val isLoading: Boolean,
     val profile: UserEntry = UserEntry("", null, 0f, 0, 0, 0f),
     val runs: List<Run> = listOf(),
-    val error: String? = null
+    val error: AppError = AppError.Absent
         )
 
 data class StatsActions(
@@ -43,7 +44,7 @@ class StatsScreenViewModel(
         viewModelScope.launch {
             _statsState.updateState(
                 isLoading = true,
-                error = Option.Present(null)
+                error = AppError.Absent
             )
             try{
                 val profile = profilesRepository.getMyUserEntry()
@@ -52,10 +53,10 @@ class StatsScreenViewModel(
                     isLoading = false,
                     profile = profile,
                     runs = runs,
-                    error = Option.Present(null),
+                    error = AppError.Absent,
                 )
             } catch (e: Exception) {
-                _statsState.updateState(error = Option.Present(e.message ?: "Error while loading profile"))
+                _statsState.updateState(error = AppError.Present(e.message ?: "Error while loading profile"))
             } finally {
                 _statsState.updateState(isLoading = false)
             }
@@ -67,7 +68,7 @@ class StatsScreenViewModel(
         viewModelScope.launch {
             _statsState.updateState(
                 isLoading = true,
-                error = Option.Present(null)
+                error = AppError.Absent
             )
             try{
                 val userId = profilesRepository.getMyProfile().id
@@ -76,7 +77,7 @@ class StatsScreenViewModel(
                         _statsState.updateState(runs = runs)
                     }
             } catch (e: Exception) {
-                _statsState.updateState(error = Option.Present(e.message ?: "Error while loading run preview"))
+                _statsState.updateState(error = AppError.Present(e.message ?: "Error while loading run preview"))
             } finally {
                 _statsState.updateState(isLoading = false)
             }
@@ -88,16 +89,13 @@ class StatsScreenViewModel(
         isLoading: Boolean? = null,
         profile: UserEntry? = null,
         runs: List<Run> ?= null,
-        error: Option<String> = Option.Absent,
+        error: AppError? = null,
     ) {
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
             profile = profile ?: value.profile,
             runs = runs ?: value.runs,
-            error = when (error) {
-                is Option.Absent -> value.error
-                is Option.Present -> error.value
-            },
+            error = error?: value.error,
         )
     }
 }
