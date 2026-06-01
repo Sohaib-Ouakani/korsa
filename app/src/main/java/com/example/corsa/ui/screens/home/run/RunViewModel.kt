@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.home.run
 
+import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.location.LocationProvider
@@ -52,12 +53,13 @@ sealed class SaveState {
     object Saving : SaveState()
     object Success : SaveState()
     data class Error(val message: String) : SaveState()
+    data class Validation(val message: String) : SaveState()
 }
 
 data class RunState(
     val points: List<TrackingPoint> = emptyList(),
     val distanceMeters: Float = 0f,
-    val currentPaceSecPerKm: Int = 0,   // seconds per km, 0 = not yet computable
+    val currentPaceSecPerKm: Int = 0,
     val startEpochMs: Long = 0L,
 ) {
     val distanceKm: Float get() = distanceMeters / 1000f
@@ -85,6 +87,7 @@ class RunViewModel(
         { pause() },
         { stop() }
     )
+    private val MIN_RUN_DURATION_MS = 10_000L
     private val _profile = MutableStateFlow<Profile?>(null)
     private val profile: StateFlow<Profile?> = _profile
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
@@ -92,7 +95,8 @@ class RunViewModel(
     private val runState: StateFlow<RunState> = _runState
     private var trackingJob: Job? = null
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    private var timerJob: Job? = null
+    private val stopWatchState: StateFlow<StopWatchState> = _stopWatchState
+    private var stopWatchJob: Job? = null
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState
     ) { sw, run, save ->
@@ -113,37 +117,30 @@ class RunViewModel(
         if (_stopWatchState.value.isRunning) return
         _stopWatchState.update { it.copy(isRunning = true) }
 
-        // Record start time only on the very first start (not on resume)
         if (_runState.value.startEpochMs == 0L) {
             _runState.update { it.copy(startEpochMs = System.currentTimeMillis()) }
         }
-        timerJob = viewModelScope.launch {
-            while (currentCoroutineContext().isActive) {
-                delay(200L)                    // tick every second
-                _stopWatchState.update { current ->
-                    current.copy(
-                        elapsedTime = current.elapsedTime + 200L
-                    )
-                }
-            }
-        }
+        startStopWatchJob()
+        startGPSJob()
+    }
 
-        // GPS accumulation — starts fresh, or resumes from where we paused
+    private fun startGPSJob() {
         trackingJob = viewModelScope.launch {
             locationProvider.locationFlow(intervalMs = 3000L)
                 .collect { location ->
                     val newPoint = TrackingPoint(
                         location.latitude,
                         location.longitude,
-                        if (location.hasAltitude()) location.altitude else null)
+                        if (location.hasAltitude()) location.altitude else null
+                    )
                     _runState.update { current ->
                         val updatedPoints = current.points + newPoint
 
-                        // Distance: add the leg from the previous point to this one
+                        // Distance: add the previous point to this one
                         val addedMeters = if (updatedPoints.size >= 2) {
                             val prev = updatedPoints[updatedPoints.size - 2]
                             val results = FloatArray(1)
-                            android.location.Location.distanceBetween(
+                            Location.distanceBetween(
                                 prev.lat, prev.lng,
                                 newPoint.lat, newPoint.lng,
                                 results
@@ -159,7 +156,7 @@ class RunViewModel(
                         else 0
 
                         current.copy(
-                            points        = updatedPoints,
+                            points = updatedPoints,
                             distanceMeters = totalDistance,
                             currentPaceSecPerKm = pace
                         )
@@ -168,8 +165,21 @@ class RunViewModel(
         }
     }
 
+    private fun startStopWatchJob() {
+        stopWatchJob = viewModelScope.launch {
+            while (currentCoroutineContext().isActive) {
+                delay(200L)
+                _stopWatchState.update { current ->
+                    current.copy(
+                        elapsedTime = current.elapsedTime + 200L
+                    )
+                }
+            }
+        }
+    }
+
     private fun pause() {
-        timerJob?.cancel()
+        stopWatchJob?.cancel()
         trackingJob?.cancel()
         _stopWatchState.update { it.copy(isRunning = false) }
     }
@@ -177,10 +187,10 @@ class RunViewModel(
 
     private fun stop() {
         pause()
-        if (_stopWatchState.value.elapsedTime > 10) {
+        if (stopWatchState.value.elapsedTime > MIN_RUN_DURATION_MS) {
             finishRun()
         } else {
-            _saveState.value = SaveState.Error("Run too short to save")
+            _saveState.value = SaveState.Validation("Run too brief to save")
             reset()
         }
     }
@@ -192,7 +202,7 @@ class RunViewModel(
         reset()
 
         if (run.points.size < 2) {
-            _saveState.value = SaveState.Error("Run too short to save")
+            _saveState.value = SaveState.Validation("Run too short to save")
             return
         }
 
@@ -230,7 +240,7 @@ class RunViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        timerJob?.cancel()
+        stopWatchJob?.cancel()
         trackingJob?.cancel()
     }
 }
