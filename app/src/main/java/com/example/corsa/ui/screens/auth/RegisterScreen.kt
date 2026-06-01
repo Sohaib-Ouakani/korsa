@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
@@ -28,21 +29,21 @@ import org.koin.compose.koinInject
 fun RegisterScreen(
     navController: NavController,
     state: AuthState,
-    onEmailRegister: (email: String, password: String) -> Unit,
+    authActions: AuthActions
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val supabase = koinInject<SupabaseClient>()
+    val supabase = koinInject<SupabaseClient>() // This is needed here for the composable
 
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
-        when (state) {
-            is AuthState.Error -> snackbarHostState.showSnackbar(state.message)
+        when(state.error) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
@@ -76,11 +77,11 @@ fun RegisterScreen(
                 RegisterDivider()
                 GoogleButton(
                     onClick = { googleAuthState.startFlow() },
-                    enabled = state !is AuthState.Loading
+                    enabled = !state.isLoading
                 )
                 RegisterButton(
-                    onClick = { onEmailRegister(email, password) },
-                    isLoading = state is AuthState.Loading
+                    onClick = { authActions.registerWithEmail(email, password) },
+                    isLoading = state.isLoading
                 )
             }
         }

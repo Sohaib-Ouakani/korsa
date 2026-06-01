@@ -88,7 +88,7 @@ fun CorsaNavGraph(
                     LoginScreen(
                         navController = navController,
                         state = state,
-                        onEmailLogin = authViewModel::loginWithEmail
+                        authActions = authViewModel.authActions,
                     )
                 }
                 composable<CorsaRoute.RegisterScreen> {
@@ -97,7 +97,7 @@ fun CorsaNavGraph(
                     RegisterScreen(
                         navController = navController,
                         state = state,
-                        onEmailRegister = authViewModel::registerWithEmail
+                        authActions = authViewModel.authActions
                     )
                 }
                 composable<CorsaRoute.Home> {
