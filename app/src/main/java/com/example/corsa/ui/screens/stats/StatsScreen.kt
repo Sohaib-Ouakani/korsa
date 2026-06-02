@@ -64,7 +64,7 @@ fun StatsScreen(
 
 
     Scaffold(
-        topBar = { TopBar(navController) },
+        topBar = { TopBar(navController, state.profile.avatarUrl) },
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { contentPadding ->
