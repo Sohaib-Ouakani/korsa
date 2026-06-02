@@ -168,7 +168,11 @@ class RunsRepositoryImpl(
         for (i in 1 until altitudes.size) {
 
             val diff = altitudes[i] - altitudes[i - 1]
-            if (diff > 0) gain += diff
+            if (diff > 0) {
+                gain += diff
+            }else{
+                gain -= diff
+            }
         }
         return gain.toFloat()
     }

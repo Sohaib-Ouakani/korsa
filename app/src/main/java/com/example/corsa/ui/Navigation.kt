@@ -89,7 +89,7 @@ fun CorsaNavGraph(
                     LoginScreen(
                         navController = navController,
                         state = state,
-                        onEmailLogin = authViewModel::loginWithEmail
+                        authActions = authViewModel.authActions,
                     )
                 }
                 composable<CorsaRoute.RegisterScreen> {
@@ -98,7 +98,7 @@ fun CorsaNavGraph(
                     RegisterScreen(
                         navController = navController,
                         state = state,
-                        onEmailRegister = authViewModel::registerWithEmail
+                        authActions = authViewModel.authActions
                     )
                 }
                 composable<CorsaRoute.Home> {
@@ -160,7 +160,8 @@ fun CorsaNavGraph(
                 }
                 composable<CorsaRoute.ProfileDetailScreen> {
                     val viewModel = koinViewModel<ProfileDetailViewModel>()
-                    ProfileDetailScreen(navController = navController, viewModel = viewModel)
+                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    ProfileDetailScreen(navController = navController, state, viewModel.profileDetailAction)
                 }
                 composable<CorsaRoute.AddFollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()

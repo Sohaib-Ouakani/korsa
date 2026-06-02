@@ -10,7 +10,6 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Columns.Companion.raw
 import io.github.jan.supabase.storage.storage
 import io.ktor.http.ContentType
 import kotlinx.datetime.DateTimeUnit
@@ -142,10 +141,10 @@ class ProfilesRepositoryImpl(
             .decodeSingle<Profile>()
 
         val weeklyKm = weeklyKmByUserId(profile.id)
-
+        val avatarUrl = if (profile.avatarPath != null) avatarUrl(profile.avatarPath) else null
         return UserEntry(
             profile.username,
-            profile.avatarPath,
+            avatarUrl,
             weeklyKm,
             profile.level,
             profile.completedChallenges,
@@ -189,10 +188,10 @@ class ProfilesRepositoryImpl(
     override suspend fun getMyUserEntry(): UserEntry {
         val profile = getMyProfile()
         val weeklyKm = weeklyKmByUserId(profile.id)
-
+        val avatarUrl = if (profile.avatarPath != null) avatarUrl(profile.avatarPath) else null
         return UserEntry(
             profile.username,
-            profile.avatarPath,
+            avatarUrl,
             weeklyKm,
             profile.level,
             profile.completedChallenges,
