@@ -1,11 +1,11 @@
 package com.example.corsa.ui.screens.friends
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
+import com.example.corsa.utils.AppError
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -14,11 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed interface FriendUIState {
-    data object Loading : FriendUIState
-    data class Error(val message: String) : FriendUIState
-    data object Success : FriendUIState
-}
 
 data class UserRankEntry(
     val userId: String,
@@ -38,10 +33,28 @@ data class RunFeedEntry(
     val distance: Double
 )
 
-data class SearchStatus(
-    val friendsName: List<Profile>,
-    val notFriends: List<Profile>
+data class FollowState (
+    val isLoading: Boolean,
+    val rankEntry: List<UserRankEntry> = listOf(),
+    val feedEntry: List<RunFeedEntry> = listOf(),
+    val error: AppError = AppError.Absent,
+
+    )
+
+data class SearchState(
+    val isLoading: Boolean,
+    val friendsName: List<Profile> = emptyList(),
+    val notFriends: List<Profile> = emptyList(),
+    val error: AppError = AppError.Absent,
 )
+
+data class FollowAction(
+    val refreshFriends: () -> Unit,
+    val loadRanking:  (SortBy) -> Unit,
+    val buildAvatarUrl: (String) -> String,
+    val loadFeed: () -> Unit,
+)
+
 
 enum class SortBy { Kilometers, Level }
 
@@ -50,81 +63,91 @@ class FollowingViewModel(
     private val runsRepository: RunsRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<FriendUIState>(FriendUIState.Loading)
-    val uiState: StateFlow<FriendUIState> = _uiState
+    val followAction = FollowAction(
+        refreshFriends = ::refreshFriends,
+        loadRanking = ::loadRanking,
+        buildAvatarUrl = ::buildAvatarUrl,
+        loadFeed = ::loadFeed,
+    )
 
-    private val _rankEntries = MutableStateFlow<List<UserRankEntry>>(emptyList())
-    val rankEntries: StateFlow<List<UserRankEntry>> = _rankEntries
+    private val _followState = MutableStateFlow(FollowState(isLoading = true))
+    val followState = _followState.asStateFlow()
 
-    private val _feedEntries = MutableStateFlow<List<RunFeedEntry>>(emptyList())
-    val feedEntry: StateFlow<List<RunFeedEntry>> = _feedEntries
 
-    private val _isRankLoading = MutableStateFlow(true)
-    val isRankLoading: StateFlow<Boolean> = _isRankLoading.asStateFlow()
 
     // Cached friends profiles to avoid repeated network calls
     private var cachedFriendProfiles: List<Profile> = emptyList()
 
     // Holds friends names for the search bar
-    private val _searchStatus = MutableStateFlow(SearchStatus(emptyList(), emptyList()))
-    val searchStatus: StateFlow<SearchStatus> = _searchStatus.asStateFlow()
+    private val _searchState = MutableStateFlow(SearchState(isLoading = true))
+    val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            loadFriendsProfiles()
-        }
+        loadFriendsProfiles()
     }
 
     // ── Load & cache friends profiles once ──────────────────────────────────
 
-    private suspend fun loadFriendsProfiles() {
-        try {
+    private  fun loadFriendsProfiles() {
+        viewModelScope.launch {
+            try {
             val friends = profilesRepository.getProfileIFollow()
             val notFriends = profilesRepository.getProfilesIDoNotFollow()
             cachedFriendProfiles = friends
-            _searchStatus.value = SearchStatus(
+            _searchState.updateSearchState(
                 friendsName = friends,
-                notFriends  = notFriends   // filled in AddFriendsScreen scope
+                notFriends  = notFriends,
+                error = AppError.Absent,
             )
-            _uiState.value = FriendUIState.Success
             loadRanking(SortBy.Kilometers)
             loadFeed()
         } catch (e: Exception) {
-            _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
+            _followState.updateFollowState(error = AppError.Present(e.message ?: "Error while loading"))
+            _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error while loading"))
+        } finally {
+            _followState.updateFollowState(isLoading = false)
+            _searchState.updateSearchState(isLoading = false)
         }
+        }
+
     }
 
     // ── Ranking ─────────────────────────────────────────────────────────────
 
-    fun refreshFriends() {
+    private fun refreshFriends() {
         viewModelScope.launch {
             loadFriendsProfiles()
         }
     }
-    suspend fun loadRanking(sortBy: SortBy) {
-        _isRankLoading.value = true
-        try {
-            val entries = coroutineScope {
-                cachedFriendProfiles.map { profile ->
-                    async {
-                        UserRankEntry(
-                            userId      = profile.id,
-                            displayName = profile.username,
-                            avatarUrl   = profile.avatarPath,
-                            weekKm      = profilesRepository.weeklyKmByUserId(profile.id),
-                            level       = profile.level,
-                        )
-                    }
-                }.awaitAll()
+    private fun loadRanking(sortBy: SortBy) {
+        viewModelScope.launch {
+            _followState.updateFollowState(
+                isLoading = true,
+                error = AppError.Absent
+            )
+            try {
+                val entries = coroutineScope {
+                    cachedFriendProfiles.map { profile ->
+                        async {
+                            UserRankEntry(
+                                userId      = profile.id,
+                                displayName = profile.username,
+                                avatarUrl   = profile.avatarPath,
+                                weekKm      = profilesRepository.weeklyKmByUserId(profile.id),
+                                level       = profile.level,
+                            )
+                        }
+                    }.awaitAll()
+                }
+                _followState.updateFollowState(rankEntry =  when (sortBy) {
+                    SortBy.Kilometers -> entries.sortedByDescending { it.weekKm }
+                    SortBy.Level      -> entries.sortedByDescending { it.level }
+                })
+            } catch (e: Exception) {
+                _followState.updateFollowState(error = AppError.Present(e.message ?: "Error loading rank"))
+            } finally {
+                _followState.updateFollowState(isLoading = false)
             }
-            _rankEntries.value = when (sortBy) {
-                SortBy.Kilometers -> entries.sortedByDescending { it.weekKm }
-                SortBy.Level      -> entries.sortedByDescending { it.level }
-            }
-        } catch (e: Exception) {
-            _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
-        } finally {
-            _isRankLoading.value = false
         }
     }
 
@@ -136,6 +159,10 @@ class FollowingViewModel(
 
     fun loadFeed() {
         viewModelScope.launch {
+            _followState.updateFollowState(
+                isLoading = true,
+                error = AppError.Absent,
+            )
             try {
                 val allRuns = cachedFriendProfiles.flatMap { profile ->
                     runsRepository.getRunsByUserId(profile.id)
@@ -151,10 +178,42 @@ class FollowingViewModel(
                             )
                         }
                 }
-                _feedEntries.value = allRuns.sortedByDescending { it.startTime }
+                _followState.updateFollowState(feedEntry = allRuns.sortedByDescending { it.startTime })
             } catch (e: Exception) {
-                _uiState.value = FriendUIState.Error(e.message ?: "Unknown error")
+                _followState.updateFollowState(error = AppError.Present(e.message ?: "Error loading feed"))
+            } finally {
+                _followState.updateFollowState(isLoading = false)
             }
         }
+    }
+
+    private fun MutableStateFlow<FollowState>.updateFollowState(
+        isLoading: Boolean? = null,
+        rankEntry: List<UserRankEntry>? = null,
+        feedEntry: List<RunFeedEntry>? = null,
+        error: AppError? = null,
+    ){
+        value = value.copy(
+            isLoading = isLoading ?: value.isLoading,
+            rankEntry = rankEntry ?: value.rankEntry,
+            feedEntry = feedEntry ?: value.feedEntry,
+            error = error ?: value.error
+
+        )
+    }
+
+    private fun MutableStateFlow<SearchState>.updateSearchState(
+        isLoading: Boolean? = null,
+        friendsName: List<Profile>? = null,
+        notFriends: List<Profile>? = null,
+        error: AppError? = null,
+    ){
+        value = value.copy(
+            isLoading = isLoading ?: value.isLoading,
+            friendsName = friendsName ?: value.friendsName,
+            notFriends = notFriends?: value.notFriends,
+            error = error ?: value.error
+        )
+
     }
 }
