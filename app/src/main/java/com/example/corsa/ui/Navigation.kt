@@ -1,10 +1,10 @@
 package com.example.corsa.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -59,14 +59,13 @@ fun CorsaNavGraph(
 ) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
 
-    DeepLink.resolve(intent).let { deepLink ->
+    DeepLink.resolve(intent)?.let { deepLink ->
         when (deepLink) {
             is DeepLink.PasswordReset -> { sessionViewModel.handleDeeplinks(
                 deepLink.intent,
                 onSessionSuccess = { navController.navigate(CorsaRoute.PasswordResetScreen) }
             ) }
             is DeepLink.Run -> navController.navigate(CorsaRoute.SharedRunScreen(deepLink.token))
-            else -> { Log.e("deeplink", "Deeplink malformed") }
         }
     }
 
@@ -181,37 +180,29 @@ fun CorsaNavGraph(
     }
 }
 
-private sealed class DeepLink {
-    data class PasswordReset(val intent: Intent) : DeepLink() {
-        companion object {
-            fun matches(intent: Intent): Boolean {
-                return intent.data?.let { uri ->
-                    uri.scheme == "corsa" && uri.host == "password-reset"
-                } ?: false
-            }
-        }
+private sealed interface DeepLink {
+    data class PasswordReset(val intent: Intent) : DeepLink {
     }
 
-    data class Run(val token: String) : DeepLink() {
-        companion object {
-            fun matches(intent: Intent): Boolean {
-                return intent.data?.let { uri ->
-                    uri.scheme == "corsa" && uri.host == "run" && uri.lastPathSegment != null
-                } ?: false
-            }
-
-            fun extractRunId(intent: Intent): String? {
-                return intent.data?.lastPathSegment
-            }
-        }
+    data class Run(val token: String) : DeepLink {
     }
 
     companion object {
         fun resolve(intent: Intent): DeepLink? {
-            return when {
-                PasswordReset.matches(intent) -> PasswordReset(intent)
-                Run.matches(intent) -> Run.extractRunId(intent)?.let { Run(it) }
-                else -> null
+            return intent.data?.toString()?.toUri()?.let { uri ->
+                when (uri.host) {
+                    "run" -> {
+                        val token = uri.pathSegments.firstOrNull()
+                        if (token != null) Run(token) else null
+                    }
+
+                    "auth" if uri.path?.startsWith("/v1/verify") == true &&
+                            uri.getQueryParameter("type") == "recovery" -> {
+                        PasswordReset(intent)
+                    }
+
+                    else -> null
+                }
             }
         }
     }
