@@ -4,30 +4,22 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.location.Location
 import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.location.TrackingPoint
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.service.RunTrackingService
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.collections.plus
 import kotlin.time.Clock
 
 data class RunActions(
@@ -96,8 +88,6 @@ class RunViewModel(
     )
     companion object {
         private const val MIN_RUN_DURATION_MS = 10_000L
-        private const val GPS_INTERVAL_MS = 3_000L
-        private const val STOPWATCH_TICK_MS = 200L
     }
 
     private var service: RunTrackingService? = null

@@ -29,15 +29,12 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class RunTrackingService : Service() {
-
-    // ── Binder ───────────────────────────────────────────────────────────────
     inner class RunBinder : Binder() {
         fun getService(): RunTrackingService = this@RunTrackingService
     }
     private val binder = RunBinder()
     override fun onBind(intent: Intent): IBinder = binder
 
-    // ── Dependencies ─────────────────────────────────────────────────────────
     private val locationProvider: LocationProvider by inject()
 
     // ── Coroutine scope ──────────────────────────────────────────────────────
