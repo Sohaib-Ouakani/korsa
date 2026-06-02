@@ -1,5 +1,6 @@
 package com.example.corsa
 
+import android.content.Context
 import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.AuthRepositoryImpl
@@ -7,6 +8,7 @@ import com.example.corsa.data.repositories.RunsRepositoryImpl
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.ProfilesRepositoryImpl
 import com.example.corsa.data.repositories.RunsRepository
+import com.example.corsa.service.RunTrackingService
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.auth.AuthViewModel
@@ -65,7 +67,7 @@ val appModule = module {
     viewModel { StatsScreenViewModel(get(), get()) }
     viewModel { AuthViewModel(get()) }
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { RunViewModel(get(), get(), get()) }
+    viewModel { RunViewModel(get(), get(), get<Context>().applicationContext) }
     viewModel { FollowingViewModel(get(), get() ) }
     viewModel { params -> RunDetailViewModel(get(), get(),params.get()) }
     viewModel { ProfileDetailViewModel(get(), get(), get()) }

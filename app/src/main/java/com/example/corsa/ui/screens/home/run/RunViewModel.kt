@@ -1,26 +1,25 @@
 package com.example.corsa.ui.screens.home.run
 
-import android.location.Location
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.location.TrackingPoint
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
+import com.example.corsa.service.RunTrackingService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.collections.plus
 import kotlin.time.Clock
 
 data class RunActions(
@@ -80,7 +79,7 @@ data class RunUiState(
 class RunViewModel(
     private val runsRepository: RunsRepository,
     private val profilesRepository: ProfilesRepository,
-    private val locationProvider: LocationProvider
+    private val appContext: Context,
 ): ViewModel() {
     val runActions = RunActions(
         ::start,
@@ -89,15 +88,28 @@ class RunViewModel(
     )
     companion object {
         private const val MIN_RUN_DURATION_MS = 10_000L
-        private const val GPS_INTERVAL_MS = 3_000L
-        private const val STOPWATCH_TICK_MS = 200L
     }
+
+    private var service: RunTrackingService? = null
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            Log.d("RunVM", "onServiceConnected")
+            service = (binder as RunTrackingService.RunBinder).getService()
+            observeServiceState()
+        }
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.d("RunVM", "onServiceDisconnected")
+            service = null
+        }
+    }
+
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     private val _runState = MutableStateFlow(RunState())
     private val _stopWatchState = MutableStateFlow(StopWatchState())
     private var _profile: Profile? = null
-    private var _stopWatchJob: Job? = null
-    private var _trackingJob: Job? = null
+
+
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState
     ) { sw, run, save ->
@@ -109,114 +121,51 @@ class RunViewModel(
 
     init {
         loadProfile()
+        startAndBindService()
     }
 
-    private fun loadProfile() {
-        viewModelScope.launch {
-            try {
-                _profile = profilesRepository.getMyProfile()
-            } catch (e: Exception) {
-                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
-            }
-        }
+    private fun startAndBindService() {
+        val intent = Intent(appContext, RunTrackingService::class.java)
+        val startResult = appContext.startService(intent)
+        Log.d("RunVM", "startService result: $startResult")
+        val bindResult = appContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        Log.d("RunVM", "bindService result: $bindResult")
+    }
+    private fun observeServiceState() {
+        Log.d("RunVM", "observeServiceState called, service=$service")
+        val svc = service ?: return
+        viewModelScope.launch { svc.stopWatchState.collect { _stopWatchState.value = it } }
+        viewModelScope.launch { svc.runState.collect { _runState.value = it } }
     }
 
-    private fun start() {
-        if (_stopWatchState.value.isRunning) return
-
-        _stopWatchState.update { it.copy(isRunning = true) }
-
-        if (_runState.value.startEpochMs == 0L) {
-            _runState.update { it.copy(startEpochMs = System.currentTimeMillis()) }
-        }
-        startStopWatchJob()
-        startGPSJob()
-    }
-
-    private fun startGPSJob() {
-        _trackingJob = viewModelScope.launch {
-            locationProvider.locationFlow(GPS_INTERVAL_MS)
-                .collect { location ->
-                    val newPoint = TrackingPoint(
-                        location.latitude,
-                        location.longitude,
-                        if (location.hasAltitude()) location.altitude else null
-                    )
-                    _runState.update { current ->
-                        val updatedPoints = current.points + newPoint
-
-                        // Distance: add the previous point to this one
-                        val addedMeters = if (updatedPoints.size >= 2) {
-                            val prev = updatedPoints[updatedPoints.size - 2]
-                            val results = FloatArray(1)
-                            Location.distanceBetween(
-                                prev.lat, prev.lng,
-                                newPoint.lat, newPoint.lng,
-                                results
-                            )
-                            results[0]
-                        } else 0f
-
-                        val totalDistance = current.distanceMeters + addedMeters
-
-                        current.copy(
-                            points = updatedPoints,
-                            distanceMeters = totalDistance,
-                        )
-                    }
-                }
-        }
-    }
-
-    private fun startStopWatchJob() {
-        _stopWatchJob?.cancel()
-        _stopWatchJob = viewModelScope.launch {
-            while (currentCoroutineContext().isActive) {
-                delay(STOPWATCH_TICK_MS)
-                _stopWatchState.update { current ->
-                    current.copy(
-                        elapsedTime = current.elapsedTime + STOPWATCH_TICK_MS
-                    )
-                }
-            }
-        }
-    }
-
-    private fun pause() {
-        _stopWatchJob?.cancel()
-        _trackingJob?.cancel()
-        _stopWatchState.update { it.copy(isRunning = false) }
-    }
-
+    private fun start() = service?.start()
+    private fun pause() = service?.pause()
 
     private fun stop() {
-        pause()
-        if (_stopWatchState.value.elapsedTime > MIN_RUN_DURATION_MS) {
-            finishRun()
-        } else {
-            _saveState.value = SaveState.Validation("Run too brief to save")
-            reset()
-        }
-    }
+        val svc = service ?: return
+        val (sw, run) = svc.stopAndSnapshot()
 
-    private fun finishRun() {
-        val userId = _profile?.id ?: run {
-            _saveState.value = SaveState.Error("Profile not loaded, run not saved")
-            reset()
+        if (sw.elapsedTime <= MIN_RUN_DURATION_MS) {
+            _saveState.value = SaveState.Validation("Run too brief to save")
             return
         }
-        val run    = _runState.value
-        val endMs  = Clock.System.now().toEpochMilliseconds()
+        finishRun(sw, run)
+    }
 
+    private fun finishRun(sw: StopWatchState, run: RunState) {
+        val userId = _profile?.id ?: run {
+            _saveState.value = SaveState.Error("Profile not loaded, run not saved")
+            return
+        }
         if (run.points.size < 2) {
             _saveState.value = SaveState.Validation("Run too short to save")
             return
         }
-
-        viewModelScope.launch {
-            saveNewRun(userId, run, endMs)
-            reset()
-        }
+        val pace = if (run.distanceMeters > 0)
+            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
+        else 0
+        val endMs = Clock.System.now().toEpochMilliseconds()
+        viewModelScope.launch { saveNewRun(userId, run.copy(currentPaceSecPerKm = pace), endMs) }
     }
 
     private suspend fun saveNewRun(
@@ -227,11 +176,11 @@ class RunViewModel(
         _saveState.value = SaveState.Saving
         try {
             runsRepository.saveRun(
-                userId = userId,
-                startEpochMs = run.startEpochMs,
-                endEpochMs = endMs,
-                points = run.points,
-                distanceMeters = run.distanceMeters,
+                userId           = userId,
+                startEpochMs     = run.startEpochMs,
+                endEpochMs       = endMs,
+                points           = run.points,
+                distanceMeters   = run.distanceMeters,
                 meanPaceSecPerKm = run.currentPaceSecPerKm,
             )
             _saveState.value = SaveState.Success
@@ -240,14 +189,19 @@ class RunViewModel(
         }
     }
 
-    private fun reset() {
-        _stopWatchState.update { it.copy(elapsedTime = 0L) }
-        _runState.value = RunState()
+    private fun loadProfile() {
+        viewModelScope.launch {
+            try { _profile = profilesRepository.getMyProfile() }
+            catch (e: Exception) {
+                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
+            }
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
-        _stopWatchJob?.cancel()
-        _trackingJob?.cancel()
+        appContext.unbindService(connection)
+        // intentionally NOT calling stopService here —
+        // if the user backgrounds the app mid-run the service keeps going
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
+import com.example.corsa.ui.premissions.NotificationPermission
+import com.example.corsa.ui.premissions.NotificationPermissionHandler
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
@@ -57,6 +60,27 @@ fun StopWatchScreen(
         }
     }
 
+    NotificationPermissionHandler {
+            notifState, requestNotification ->
+        LaunchedEffect(Unit) {
+            if (notifState == NotificationPermission.DENIED) {
+                requestNotification()
+            }
+        }
+        Content(snackbarHostState, saveState, cs, title, run, stopWatch, actions)
+    }
+}
+
+@Composable
+private fun Content(
+    snackbarHostState: SnackbarHostState,
+    saveState: SaveState,
+    cs: ColorScheme,
+    title: String,
+    run: RunState,
+    stopWatch: StopWatchState,
+    actions: RunActions,
+) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -79,13 +103,13 @@ fun StopWatchScreen(
             Spacer(Modifier.height(Spacing.lg))
             // Distance
             Text(
-                text  = "${"%.2f".format(run.distanceKm)} km",
+                text = "${"%.2f".format(run.distanceKm)} km",
                 style = MaterialTheme.typography.displayMedium,
                 color = cs.inverseOnSurface,
             )
             // Pace
             Text(
-                text  = run.formattedPace,
+                text = run.formattedPace,
                 style = MaterialTheme.typography.titleMedium,
                 color = cs.inverseOnSurface,
             )
@@ -115,7 +139,7 @@ fun StopWatchScreen(
                         onClick = {
                             actions.stop()
                         },
-                        enabled  = saveState !is SaveState.Saving,
+                        enabled = saveState !is SaveState.Saving,
                         modifier = Modifier.size(Size.xl)
                     ) {
                         Icon(
