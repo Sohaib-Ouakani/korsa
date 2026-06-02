@@ -171,13 +171,15 @@ class RunViewModel(
             _saveState.value = SaveState.Validation("Run too short to save")
             return
         }
+        val pace = if (run.distanceMeters > 0)
+            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
+        else 0
         val endMs = Clock.System.now().toEpochMilliseconds()
-        viewModelScope.launch { saveNewRun(userId, sw, run, endMs) }
+        viewModelScope.launch { saveNewRun(userId, run.copy(currentPaceSecPerKm = pace), endMs) }
     }
 
     private suspend fun saveNewRun(
         userId: String,
-        sw: StopWatchState,
         run: RunState,
         endMs: Long
     ) {
