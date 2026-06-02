@@ -81,7 +81,7 @@ private fun Content(
         }
     }
     Scaffold(
-        topBar = { TopBar(navController) },
+        topBar = { TopBar(navController, state.myProfileUrl) },
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->

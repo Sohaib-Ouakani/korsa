@@ -27,6 +27,7 @@ data class HomeState(
     val currentKm: Float,
     val progress: Float,
     val locationInfo: LocationInfo = LocationInfo(),
+    val myProfileUrl: String? = null,
     val appError: AppError = AppError.Absent
 )
 class HomeViewModel(
@@ -34,7 +35,6 @@ class HomeViewModel(
     private val locationProvider: LocationProvider
 ): ViewModel() {
     private val _profile = MutableStateFlow<Profile?>(null)
-    val profile: StateFlow<Profile?> = _profile
 
     // Derived from profile reactively
     private val _state = MutableStateFlow<HomeState?>(null)
@@ -55,6 +55,7 @@ class HomeViewModel(
                 goalKm = goalKm,
                 currentKm = weeklyKm,
                 progress = weeklyKm / goalKm,
+                myProfileUrl = if(loaded.avatarPath != null) profilesRepository.avatarUrl(loaded.avatarPath) else null
             )
             launch {
                 var locationInfo = LocationInfo()
