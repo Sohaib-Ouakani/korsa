@@ -141,10 +141,10 @@ class ProfilesRepositoryImpl(
             .decodeSingle<Profile>()
 
         val weeklyKm = weeklyKmByUserId(profile.id)
-
+        val avatarUrl = if (profile.avatarPath != null) avatarUrl(profile.avatarPath) else null
         return UserEntry(
             profile.username,
-            profile.avatarPath,
+            avatarUrl,
             weeklyKm,
             profile.level,
             profile.completedChallenges,
