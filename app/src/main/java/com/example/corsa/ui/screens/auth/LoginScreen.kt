@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
@@ -28,28 +29,28 @@ import org.koin.compose.koinInject
 fun LoginScreen(
     navController: NavController,
     state: AuthState,
-    onEmailLogin: (email: String, password: String) -> Unit,
+    authActions: AuthActions
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val supabase = koinInject<SupabaseClient>()
+    val supabase = koinInject<SupabaseClient>() // This is needed here for the composable
 
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
 
-    val snackBarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
-        when (state) {
-            is AuthState.Error -> snackBarHostState.showSnackbar(state.message)
+        when(state.error) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
 
     Scaffold(
         topBar = { LoginScreenTopBar(onBack = { navController.popBackStack() }) },
-        snackbarHost = { SnackbarHost(snackBarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -76,11 +77,11 @@ fun LoginScreen(
                 LoginDivider()
                 GoogleButton(
                     onClick = { googleAuthState.startFlow() },
-                    enabled = state !is AuthState.Loading
+                    enabled = !state.isLoading
                 )
                 LoginButton(
-                    onClick = { onEmailLogin(email, password) },
-                    isLoading = state is AuthState.Loading
+                    onClick = { authActions.loginWithEmail(email, password) },
+                    isLoading = state.isLoading
                 )
             }
         }

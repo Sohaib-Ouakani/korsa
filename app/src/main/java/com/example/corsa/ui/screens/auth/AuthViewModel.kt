@@ -3,51 +3,79 @@ package com.example.corsa.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.repositories.AuthRepository
+import com.example.corsa.utils.AppError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed interface AuthState {
-    data object Idle : AuthState
-    data object Loading : AuthState
-    data object Success : AuthState
+data class AuthState(
+    val isLoading: Boolean,
+    val error: AppError = AppError.Absent
+)
 
-    data class Error(val message: String, val id: Long = System.currentTimeMillis()) : AuthState
-}
+data class AuthActions(
+    val loginWithEmail: (email: String, password: String) -> Unit,
+    val registerWithEmail: (email: String, password: String) -> Unit,
+)
 
 class AuthViewModel(
     private val repository: AuthRepository
 ) : ViewModel() {
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    val authActions = AuthActions(
+        loginWithEmail = ::loginWithEmail,
+        registerWithEmail = ::registerWithEmail
+    )
+
+    private val _authState = MutableStateFlow(AuthState(
+        isLoading = false
+    ))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    fun loginWithEmail(email: String, password: String) {
+    private fun loginWithEmail(email: String, password: String) {
         viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            _authState.value = try {
+            _authState.updateState(
+                isLoading = true,
+                error = AppError.Absent,
+            )
+            try {
                 repository.login(email, password)
-                AuthState.Success
             } catch (e: Exception) {
-                AuthState.Error(e.message ?: "Unknown error")
+                _authState.updateState(error = AppError.Present(e.message ?: "Error while login"))
+            } finally {
+                _authState.updateState(
+                    isLoading = false
+                )
             }
         }
     }
 
-    fun registerWithEmail(email: String, password: String) {
+    private fun registerWithEmail(email: String, password: String) {
         viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            _authState.value = try {
+            _authState.updateState(
+                isLoading = true,
+                error = AppError.Absent,
+            )
+            try {
                 repository.register(email, password)
-                AuthState.Success
             } catch (e: Exception) {
-                AuthState.Error(e.message ?: "Unknown error")
+                _authState.updateState(error = AppError.Present(e.message ?: "Error while registration"))
+            } finally {
+                _authState.updateState(
+                    isLoading = false
+                )
             }
         }
     }
 
-    fun resetState() {
-        _authState.value = AuthState.Idle
+    private fun MutableStateFlow<AuthState>.updateState(
+        isLoading: Boolean? = null,
+        error: AppError? = null,
+    ) {
+        value = value.copy(
+            isLoading = isLoading ?: value.isLoading,
+            error = error ?: value.error
+        )
     }
 }

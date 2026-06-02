@@ -13,15 +13,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,41 +42,44 @@ import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.UserEntry
+import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.AppError
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileDetailScreen(
     navController: NavController,
-    viewModel: ProfileDetailViewModel
+    state: ProfileDetailState,
+    action: ProfileDetailAction
 ) {
-    val uiState by viewModel.state.collectAsStateWithLifecycle()
-    val isFollowing by viewModel.isFollowing.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    when (val state = uiState) {
-        is ProfileDetailUiState.Loading -> ProfileDetailLoading()
-        is ProfileDetailUiState.Error   -> ProfileDetailError(message = state.message)
-        is ProfileDetailUiState.Success -> {
-            Scaffold(
-                topBar = { BackTopBar(navController = navController) }
-            ) { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    ProfileStats(
-                        navController = navController,
-                        runentries    = state.runs,
-                        infoentries   = state.userEntry,
-                        header = { ProfileHeader(
-                            userInfo      = state.userEntry,
-                            isFollowing   = isFollowing,
-                             onFollowClick = { viewModel.toggleFollow() }
-                        ) }
-                    )
-                }
-            }
+    LaunchedEffect(state) {
+        when (state.error ) {
+            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            else -> {}
+        }
+    }
+    Scaffold(
+        topBar = { BackTopBar(navController = navController) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            ProfileStats(
+                navController = navController,
+                runentries    = state.runs,
+                infoentries   = state.userEntry,
+                header = { ProfileHeader(
+                    userInfo      = state.userEntry,
+                    isFollowing   = state.isFollowing,
+                     onFollowClick = { action.toggleFollow() }
+                ) }
+            )
         }
     }
 }
@@ -112,17 +123,31 @@ fun ProfileHeader(
             ) {
                 if (userInfo.avatarUrl != null) {
                     AsyncImage(
-                        model              = userInfo.avatarUrl,
-                        contentDescription = "Avatar di ${userInfo.displayName}",
-                        contentScale       = ContentScale.Crop,
-                        modifier           = Modifier.fillMaxSize()
+                        model = userInfo.avatarUrl,
+                        contentDescription = "${userInfo.displayName}'s avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(Size.l)
+                            .clip(CircleShape)
+                            .background(cs.secondaryContainer),
                     )
                 } else {
-                    Text(
-                        text  = userInfo.displayName.first().uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = cs.onSecondaryContainer,
-                    )
+                    Surface(
+                        modifier = Modifier
+                            .size(Size.l)
+                            .clip(CircleShape)
+                            .background(cs.secondaryContainer),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize(),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
         }

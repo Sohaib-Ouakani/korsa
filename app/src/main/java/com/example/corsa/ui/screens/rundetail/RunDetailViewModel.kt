@@ -95,7 +95,7 @@ class RunDetailViewModel(
         }
     }
 
-    fun toggleLike() {
+    private fun toggleLike() {
         viewModelScope.launch {
             _runDetailState.updateState(
                 error = AppError.Absent
@@ -121,7 +121,7 @@ class RunDetailViewModel(
         }
     }
 
-    fun onAddComment(content: String) {
+    private fun onAddComment(content: String) {
         viewModelScope.launch {
             _runDetailState.updateState(
                 error = AppError.Absent,
