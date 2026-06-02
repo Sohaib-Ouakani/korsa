@@ -53,6 +53,7 @@ data class FollowAction(
     val loadRanking:  (SortBy) -> Unit,
     val buildAvatarUrl: (String) -> String,
     val loadFeed: () -> Unit,
+    val getAvatarUrl: (String) -> String?
 )
 
 
@@ -68,6 +69,7 @@ class FollowingViewModel(
         loadRanking = ::loadRanking,
         buildAvatarUrl = ::buildAvatarUrl,
         loadFeed = ::loadFeed,
+        getAvatarUrl = ::getAvatarUrl
     )
 
     private val _followState = MutableStateFlow(FollowState(isLoading = true))
@@ -185,6 +187,15 @@ class FollowingViewModel(
                 _followState.updateFollowState(isLoading = false)
             }
         }
+    }
+
+    fun getAvatarUrl(userId: String): String? {
+        var userImgPath: String? = null
+        cachedFriendProfiles.forEach { profile -> if(profile.id == userId)  userImgPath = profile.avatarPath}
+        if(userImgPath != null){
+            return profilesRepository.avatarUrl(userImgPath)
+        }
+        return null
     }
 
     private fun MutableStateFlow<FollowState>.updateFollowState(

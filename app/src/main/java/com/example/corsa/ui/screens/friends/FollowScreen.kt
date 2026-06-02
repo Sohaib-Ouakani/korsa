@@ -128,7 +128,7 @@ fun FollowScreen(
 
             when (selectedTab) {
                 StatsTab.Rank -> Rank(followState, navController, action)
-                StatsTab.Feed -> Feed(followState, navController)
+                StatsTab.Feed -> Feed(followState, navController, action)
             }
         }
     }
@@ -137,7 +137,7 @@ fun FollowScreen(
 // ── Feed part  ────────────────────────────────────────────────
 
 @Composable
-fun Feed(state: FollowState, navController: NavController) {
+fun Feed(state: FollowState, navController: NavController, action: FollowAction) {
     if (state.isLoading) {
         Box(
             modifier = Modifier
@@ -148,26 +148,26 @@ fun Feed(state: FollowState, navController: NavController) {
             CircularProgressIndicator()
         }
     } else {
-    FeedList(state.feedEntry, navController)
+    FeedList(state, navController, action)
         }
 }
 
 
 @Composable
-fun FeedList(entries: List<RunFeedEntry>, navController: NavController) {
+fun FeedList(state: FollowState, navController: NavController, action: FollowAction) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(Spacing.sm, Spacing.sm, Spacing.sm, 80.dp),
     ) {
-        items(entries) { entry ->
-            FeedCard(entry = entry, navController)
+        items(state.feedEntry) { entry ->
+            FeedCard(entry = entry, navController, action)
         }
     }
 }
 
 
 @Composable
-fun FeedCard(entry: RunFeedEntry, navController: NavController) {
+fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = {navController.navigate(CorsaRoute.RunDetailScreen(entry.runId))}
@@ -210,6 +210,7 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             // Avatar
+            var avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
                     .size(40.dp)
@@ -217,9 +218,9 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController) {
                     .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                if (entry.avatarUrl != null) {
+                if (avatarUrl != null) {
                     AsyncImage(
-                        model              = entry.avatarUrl,
+                        model              = avatarUrl,
                         contentDescription = null,
                         contentScale       = ContentScale.Crop,
                         modifier           = Modifier.fillMaxSize(),
@@ -424,14 +425,15 @@ fun Rank(followState: FollowState, navController: NavController, action: FollowA
                     RankTab.Kilometers -> SortBy.Kilometers
                     RankTab.Level      -> SortBy.Level
                 },
-                navController
+                navController,
+                action
             )
         }
     }
 }
 
 @Composable
-fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavController) {
+fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavController, action: FollowAction) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(Spacing.sm, Spacing.sm, Spacing.sm, 80.dp),
@@ -441,14 +443,15 @@ fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavCon
                 position = index + 1,
                 entry    = entry,
                 sortBy   = sortBy,
-                navController
+                navController,
+                action
             )
         }
     }
 }
 
 @Composable
-fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController: NavController) {
+fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController: NavController, action: FollowAction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = {navController.navigate(CorsaRoute.ProfileDetailScreen(entry.userId))}
@@ -477,17 +480,27 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
                 )
             }
             // Sostituisci Box con AsyncImage (Coil) quando hai le foto reali
+            var avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
-                    .size(52.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text  = entry.displayName.first().uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                if (avatarUrl != null) {
+                    AsyncImage(
+                        model              = avatarUrl,
+                        contentDescription = null,
+                        contentScale       = ContentScale.Crop,
+                        modifier           = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(
+                        text  = entry.displayName.first().uppercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
