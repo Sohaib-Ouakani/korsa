@@ -46,6 +46,7 @@ data class SearchState(
     val friendsName: List<Profile> = emptyList(),
     val notFriends: List<Profile> = emptyList(),
     val error: AppError = AppError.Absent,
+    val myprofileUrl: String? = null,
 )
 
 data class FollowAction(
@@ -86,6 +87,7 @@ class FollowingViewModel(
 
     init {
         loadFriendsProfiles()
+        getMyprofileUrl()
     }
 
     // ── Load & cache friends profiles once ──────────────────────────────────
@@ -112,6 +114,23 @@ class FollowingViewModel(
         }
         }
 
+    }
+
+    fun getMyprofileUrl() {
+        viewModelScope.launch {
+            _searchState.updateSearchState(
+                isLoading = true,
+                error = AppError.Absent,
+            )
+            try {
+                profilesRepository.getMyUserEntry().avatarUrl
+               _searchState.updateSearchState(myprofileUrl =  profilesRepository.getMyUserEntry().avatarUrl)
+            } catch (e: Exception) {
+                _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error loading Profile immage"))
+            } finally {
+                _searchState.updateSearchState(isLoading = false)
+            }
+        }
     }
 
     // ── Ranking ─────────────────────────────────────────────────────────────
@@ -217,12 +236,14 @@ class FollowingViewModel(
         isLoading: Boolean? = null,
         friendsName: List<Profile>? = null,
         notFriends: List<Profile>? = null,
+        myprofileUrl: String? = null,
         error: AppError? = null,
     ){
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
             friendsName = friendsName ?: value.friendsName,
             notFriends = notFriends?: value.notFriends,
+            myprofileUrl = myprofileUrl?: value.myprofileUrl,
             error = error ?: value.error
         )
 
