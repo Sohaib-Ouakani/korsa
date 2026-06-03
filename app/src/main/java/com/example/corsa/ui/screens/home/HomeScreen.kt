@@ -1,7 +1,6 @@
 package com.example.corsa.ui.screens.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -28,24 +27,17 @@ import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.premissions.LocationPermissionHandler
 import com.example.corsa.ui.premissions.LocationPermissionState
-import com.example.corsa.ui.screens.home.run.SaveState
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
-import com.example.corsa.utils.WeatherCondition
 
 @Composable
 fun HomeScreen(
-    state: HomeState?,
+    state: HomeState,
     navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
-
-    if (state == null) {
-        SplashScreen()
-        return
-    }
 
     LocationPermissionHandler { permissionState, requestPermission ->
         when (permissionState) {
@@ -73,7 +65,7 @@ private fun Content(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state) {
-        when(state.appError) {
+        when(state?.appError) {
             is AppError.Present -> {
                 snackbarHostState.showSnackbar(state.appError.message)
             }
@@ -85,40 +77,44 @@ private fun Content(
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Spacer(Modifier.height(Spacing.md))
-
-            LocationLabel(cs, state.locationInfo)
-
-            Spacer(Modifier.height(Spacing.md))
-
-            Text(
-                text = "READY TO\nMOVE?",
+        if (state.isLoading) {
+            SplashScreen()
+        } else {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg),
-                color = cs.onSurface,
-                style = MaterialTheme.typography.displayLarge,
-                textAlign = TextAlign.Center,
-            )
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Spacer(Modifier.height(Spacing.md))
 
-            Spacer(Modifier.height(Spacing.xxl))
+                LocationLabel(cs, state.locationInfo)
 
-            StartButton(cs) { navController.navigate(CorsaRoute.RunScreen) }
+                Spacer(Modifier.height(Spacing.md))
 
-            Spacer(Modifier.height(Spacing.xxl))
+                Text(
+                    text = "READY TO\nMOVE?",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg),
+                    color = cs.onSurface,
+                    style = MaterialTheme.typography.displayLarge,
+                    textAlign = TextAlign.Center,
+                )
 
-            GoalCard(
-                cs,
-                state.goalKm,
-                state.currentKm,
-                state.progress
-            )
+                Spacer(Modifier.height(Spacing.xxl))
+
+                StartButton(cs) { navController.navigate(CorsaRoute.RunScreen) }
+
+                Spacer(Modifier.height(Spacing.xxl))
+
+                GoalCard(
+                    cs,
+                    state.goalKm,
+                    state.currentKm,
+                    state.progress
+                )
+            }
         }
     }
 }

@@ -21,12 +21,13 @@ data class LocationInfo(
     val weatherCode: WeatherCondition = WeatherCondition.UNKNOWN
 )
 data class HomeState(
-    val goalKm: Float,
-    val currentKm: Float,
-    val progress: Float,
+    val goalKm: Float = 0f,
+    val currentKm: Float = 0f,
+    val progress: Float = 0f,
     val locationInfo: LocationInfo = LocationInfo(),
     val myProfileUrl: String? = null,
-    val appError: AppError = AppError.Absent
+    val appError: AppError = AppError.Absent,
+    val isLoading: Boolean
 )
 
 sealed class ApiEndpoint {
@@ -44,8 +45,10 @@ class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationProvider: LocationProvider
 ): ViewModel() {
-    private val _state = MutableStateFlow<HomeState?>(null)
-    val state: StateFlow<HomeState?> = _state
+    private val _state = MutableStateFlow(HomeState(
+        isLoading = true
+    ))
+    val state: StateFlow<HomeState> = _state
 
     init {
         loadProfile()
@@ -57,12 +60,15 @@ class HomeViewModel(
                 val loaded = profilesRepository.getMyProfile()
                 val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
                 val goalKm = loaded.level * 10f
+                val profileUrl = if(loaded.avatarPath != null) {
+                    profilesRepository.avatarUrl(loaded.avatarPath)
+                } else null
 
-                _state.value = HomeState(
+                _state.updateState(
                     goalKm = goalKm,
                     currentKm = weeklyKm,
                     progress = weeklyKm / goalKm,
-                    myProfileUrl = if(loaded.avatarPath != null) profilesRepository.avatarUrl(loaded.avatarPath) else null
+                    myProfileUrl = profileUrl
                 )
                 launch {
                     var locationInfo = LocationInfo()
@@ -76,6 +82,8 @@ class HomeViewModel(
                 }
             } catch (e: Exception) {
                 _state.updateState(appError = AppError.Present(e.message ?: "Failed to load profile"))
+            } finally {
+                _state.updateState(isLoading = false)
             }
         }
     }
@@ -117,22 +125,23 @@ class HomeViewModel(
         }
     }
 
-    private fun MutableStateFlow<HomeState?>.updateState(
+    private fun MutableStateFlow<HomeState>.updateState(
         goalKm: Float? = null,
         currentKm: Float? = null,
         progress: Float? = null,
         locationInfo: LocationInfo? = null,
         myProfileUrl: String? = null,
-        appError: AppError? = null
+        appError: AppError? = null,
+        isLoading: Boolean? = null
     ) {
-        val current = value ?: return
-        value = current.copy(
-            goalKm = goalKm ?: current.goalKm,
-            currentKm = currentKm ?: current.currentKm,
-            progress = progress ?: current.progress,
-            locationInfo = locationInfo ?: current.locationInfo,
-            myProfileUrl = myProfileUrl ?: current.myProfileUrl,
-            appError = appError ?: current.appError
+        value = value.copy(
+            goalKm = goalKm ?: value.goalKm,
+            currentKm = currentKm ?: value.currentKm,
+            progress = progress ?: value.progress,
+            locationInfo = locationInfo ?: value.locationInfo,
+            myProfileUrl = myProfileUrl ?: value.myProfileUrl,
+            appError = appError ?: value.appError,
+            isLoading = isLoading ?: value.isLoading
         )
     }
 }
