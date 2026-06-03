@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.Clock
@@ -48,9 +49,9 @@ data class StopWatchState(
 }
 
 sealed class SaveState {
-    object Idle : SaveState()
-    object Saving : SaveState()
-    object Success : SaveState()
+    data object Idle : SaveState()
+    data object Saving : SaveState()
+    data object Success : SaveState()
     data class Error(val message: String) : SaveState()
     data class Validation(val message: String) : SaveState()
 }
@@ -107,7 +108,7 @@ class RunViewModel(
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     private val _runState = MutableStateFlow(RunState())
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    private var _profile: Profile? = null
+    private val _profile = MutableStateFlow<Profile?>(null)
 
 
     val uiState: StateFlow<RunUiState> = combine(
@@ -153,7 +154,7 @@ class RunViewModel(
     }
 
     private fun finishRun(sw: StopWatchState, run: RunState) {
-        val userId = _profile?.id ?: run {
+        val userId = _profile.value?.id ?: run {
             _saveState.value = SaveState.Error("Profile not loaded, run not saved")
             return
         }
@@ -191,7 +192,7 @@ class RunViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            try { _profile = profilesRepository.getMyProfile() }
+            try { _profile.update { profilesRepository.getMyProfile() } }
             catch (e: Exception) {
                 _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
             }

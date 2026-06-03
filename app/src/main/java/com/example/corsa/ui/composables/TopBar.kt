@@ -30,6 +30,8 @@ fun TopBar(
         actions = {
             IconButton(
                 onClick = { navController.navigate(CorsaRoute.SettingsScreen) },
+                modifier = Modifier
+                    .size(32.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.onPrimary,
                     contentColor = MaterialTheme.colorScheme.primary,
