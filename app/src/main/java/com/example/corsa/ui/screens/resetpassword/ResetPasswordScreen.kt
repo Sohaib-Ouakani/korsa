@@ -72,22 +72,6 @@ fun ResetPasswordScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ResetPasswordTopBar(onBack: () -> Unit) {
-    CenterAlignedTopAppBar(
-        title = { AppBarText() },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
-        }
-    )
-}
-
 @Composable
 private fun ColumnScope.HeroText() {
     Box(
