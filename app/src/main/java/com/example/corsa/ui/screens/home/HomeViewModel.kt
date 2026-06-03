@@ -30,6 +30,18 @@ data class HomeState(
     val myProfileUrl: String? = null,
     val appError: AppError = AppError.Absent
 )
+
+sealed class ApiEndpoint {
+    abstract val url: String
+
+    data class ReverseGeocode(val lat: Double, val lon: Double) : ApiEndpoint() {
+        override val url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json"
+    }
+
+    data class WeatherForecast(val lat: Double, val lon: Double) : ApiEndpoint() {
+        override val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+    }
+}
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationProvider: LocationProvider
@@ -83,7 +95,7 @@ class HomeViewModel(
 
     private suspend fun getCityName(lat: Double, lon: Double): String? {
         return withContext(Dispatchers.IO) {
-            val url = "https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json"
+            val url = ApiEndpoint.ReverseGeocode(lat, lon).url
 
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
@@ -101,7 +113,7 @@ class HomeViewModel(
 
     private suspend fun getWeather(lat: Double, lon: Double): WeatherCondition {
         return withContext(Dispatchers.IO) {
-            val weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+            val weatherUrl = ApiEndpoint.WeatherForecast(lat, lon).url
             val weatherConn = URL(weatherUrl).openConnection() as HttpURLConnection
             val weatherJson = JSONObject(weatherConn.inputStream.bufferedReader().readText())
             val weatherCode = weatherJson.getJSONObject("current").optInt("weather_code")
