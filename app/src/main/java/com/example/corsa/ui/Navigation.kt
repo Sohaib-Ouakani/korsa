@@ -16,9 +16,10 @@ import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.AppSessionStatus
 import com.example.corsa.ui.screens.friends.FollowScreen
 import com.example.corsa.ui.screens.auth.AuthScreen
-import com.example.corsa.ui.screens.auth.AuthViewModel
 import com.example.corsa.ui.screens.auth.LoginScreen
+import com.example.corsa.ui.screens.auth.LoginViewModel
 import com.example.corsa.ui.screens.auth.RegisterScreen
+import com.example.corsa.ui.screens.auth.RegisterViewModel
 import com.example.corsa.ui.screens.friends.AddFollowScreen
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
@@ -81,21 +82,21 @@ fun CorsaNavGraph(
                     )
                 }
                 composable<CorsaRoute.LoginScreen> {
-                    val authViewModel = koinViewModel<AuthViewModel>()
-                    val state by authViewModel.authState.collectAsStateWithLifecycle()
+                    val loginViewModel = koinViewModel<LoginViewModel>()
+                    val state by loginViewModel.loginState.collectAsStateWithLifecycle()
                     LoginScreen(
                         navController = navController,
                         state = state,
-                        actions = authViewModel.authActions,
+                        actions = loginViewModel.loginActions,
                     )
                 }
                 composable<CorsaRoute.RegisterScreen> {
-                    val authViewModel = koinViewModel<AuthViewModel>()
-                    val state by authViewModel.authState.collectAsStateWithLifecycle()
+                    val registerViewModel = koinViewModel<RegisterViewModel>()
+                    val state by registerViewModel.registerState.collectAsStateWithLifecycle()
                     RegisterScreen(
                         navController = navController,
                         state = state,
-                        actions = authViewModel.authActions
+                        actions = registerViewModel.registerActions
                     )
                 }
             }

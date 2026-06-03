@@ -28,21 +28,16 @@ import org.koin.compose.koinInject
 @Composable
 fun RegisterScreen(
     navController: NavController,
-    state: AuthState,
-    actions: AuthActions
+    state: RegisterState,
+    actions: RegisterActions
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    val supabase = koinInject<SupabaseClient>() // This is needed here for the composable
+    val supabase = koinInject<SupabaseClient>() // TODO
 
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
 
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(state) {
-        when(state.error) {
+    LaunchedEffect(state.error) {
+        when (state.error) {
             is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
@@ -70,12 +65,12 @@ fun RegisterScreen(
                     .padding(bottom = Spacing.xl),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                EmailField(email = email, onEmailChange = { email = it })
+                EmailField(email = state.email, onEmailChange = actions.onEmailChange)
                 PasswordField(
-                    password = password,
-                    onPasswordChange = { password = it },
-                    passwordVisible = passwordVisible,
-                    onToggleVisibility = { passwordVisible = !passwordVisible }
+                    password = state.password,
+                    onPasswordChange = actions.onPasswordChange,
+                    passwordVisible = state.passwordVisible,
+                    onToggleVisibility = actions.onTogglePasswordVisibility
                 )
                 RegisterDivider()
                 GoogleButton(
@@ -83,7 +78,7 @@ fun RegisterScreen(
                     enabled = !state.isLoading
                 )
                 RegisterButton(
-                    onClick = { actions.registerWithEmail(email, password) },
+                    onClick = { actions.registerWithEmail() },
                     isLoading = state.isLoading
                 )
             }

@@ -8,11 +8,10 @@ import com.example.corsa.data.repositories.RunsRepositoryImpl
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.ProfilesRepositoryImpl
 import com.example.corsa.data.repositories.RunsRepository
-import com.example.corsa.service.RunTrackingService
-import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.SessionViewModel
-import com.example.corsa.ui.screens.auth.AuthViewModel
+import com.example.corsa.ui.screens.auth.LoginViewModel
+import com.example.corsa.ui.screens.auth.RegisterViewModel
 import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.home.run.RunViewModel
 import com.example.corsa.ui.screens.settings.SettingsViewModel
@@ -70,9 +69,10 @@ val appModule = module {
     single<LocationProvider> { LocationProvider(get()) }
 
     viewModel { SessionViewModel(get()) }
+    viewModel { LoginViewModel(get()) }
+    viewModel { RegisterViewModel(get()) }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { StatsScreenViewModel(get(), get()) }
-    viewModel { AuthViewModel(get()) }
     viewModel { HomeViewModel(get(), get()) }
     viewModel { RunViewModel(get(), get(), get<Context>().applicationContext) }
     viewModel { FollowingViewModel(get(), get() ) }

@@ -28,40 +28,37 @@ import org.koin.compose.koinInject
 @Composable
 fun LoginScreen(
     navController: NavController,
-    state: AuthState,
-    actions: AuthActions
+    state: LoginState,
+    actions: LoginActions
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var showResetDialog by remember { mutableStateOf(false) }
-
     val supabase = koinInject<SupabaseClient>()
     val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(state) {
+    LaunchedEffect(state.error) {
         when (state.error) {
             is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
 
-    if (showResetDialog) {
+    if (state.showResetDialog) {
         PasswordResetDialog(
-            onDismiss = { showResetDialog = false },
+            onDismiss = { actions.onShowResetDialog(false) },
             onConfirm = { resetEmail ->
                 actions.resetPassword(resetEmail)
-                showResetDialog = false
+                actions.onShowResetDialog(false)
             }
         )
     }
 
     Scaffold(
-        topBar = { LoginScreenTopBar(onBack = {
-            navController.popBackStack()
-            actions.clearError()
-        }) },
+        topBar = {
+            LoginScreenTopBar(onBack = {
+                navController.popBackStack()
+                actions.clearError()
+            })
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
@@ -79,21 +76,21 @@ fun LoginScreen(
                     .padding(bottom = Spacing.xl),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                EmailField(email = email, onEmailChange = { email = it })
+                EmailField(email = state.email, onEmailChange = actions.onEmailChange)
                 PasswordField(
-                    password = password,
-                    onPasswordChange = { password = it },
-                    passwordVisible = passwordVisible,
-                    onToggleVisibility = { passwordVisible = !passwordVisible }
+                    password = state.password,
+                    onPasswordChange = actions.onPasswordChange,
+                    passwordVisible = state.passwordVisible,
+                    onToggleVisibility = actions.onTogglePasswordVisibility
                 )
-                ForgotPasswordButton(onClick = { showResetDialog = true })
+                ForgotPasswordButton(onClick = { actions.onShowResetDialog(true) })
                 LoginDivider()
                 GoogleButton(
                     onClick = { googleAuthState.startFlow() },
                     enabled = !state.isLoading
                 )
                 LoginButton(
-                    onClick = { actions.loginWithEmail(email, password) },
+                    onClick = actions.loginWithEmail,
                     isLoading = state.isLoading
                 )
             }
