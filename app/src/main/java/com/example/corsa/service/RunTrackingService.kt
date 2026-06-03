@@ -10,6 +10,7 @@ import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.example.corsa.R
 import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.location.TrackingPoint
 import com.example.corsa.ui.screens.home.run.RunState
@@ -159,7 +160,7 @@ class RunTrackingService : Service() {
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Run in progress")
             .setContentText(time)
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(R.drawable.ic_sprint)
             .setOngoing(true)
             .build()
 
