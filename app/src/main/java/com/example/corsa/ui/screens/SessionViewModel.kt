@@ -23,7 +23,7 @@ enum class AppSessionStatus {
 }
 
 class SessionViewModel(
-    private val authRepository: AuthRepository,
+    authRepository: AuthRepository,
 ): ViewModel() {
     private val _appSessionStatus = MutableStateFlow(AppSessionStatus.Loading)
     val appSessionStatus = _appSessionStatus.asStateFlow()
