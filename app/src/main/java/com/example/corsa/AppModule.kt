@@ -9,6 +9,7 @@ import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.ProfilesRepositoryImpl
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.service.RunTrackingService
+import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.auth.AuthViewModel
@@ -16,6 +17,7 @@ import com.example.corsa.ui.screens.home.HomeViewModel
 import com.example.corsa.ui.screens.home.run.RunViewModel
 import com.example.corsa.ui.screens.settings.SettingsViewModel
 import com.example.corsa.ui.screens.profiledetail.ProfileDetailViewModel
+import com.example.corsa.ui.screens.resetpassword.ResetPasswordViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
 import com.example.corsa.ui.screens.stats.StatsScreenViewModel
 import io.github.jan.supabase.auth.Auth
@@ -76,4 +78,5 @@ val appModule = module {
     viewModel { FollowingViewModel(get(), get() ) }
     viewModel { params -> RunDetailViewModel(get(), get(),params.get()) }
     viewModel { ProfileDetailViewModel(get(), get(), get()) }
+    viewModel { ResetPasswordViewModel(get()) }
 }
