@@ -36,6 +36,8 @@ import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import com.example.corsa.ui.screens.home.run.RunViewModel
 import com.example.corsa.ui.screens.home.run.StopWatchScreen
+import com.example.corsa.ui.screens.resetpassword.ResetPasswordScreen
+import com.example.corsa.ui.screens.resetpassword.ResetPasswordViewModel
 
 sealed interface CorsaRoute {
     @Serializable data object Home : CorsaRoute
@@ -188,7 +190,13 @@ fun CorsaNavGraph(
                     AddFollowScreen(navController, searchState, friendsVM.followAction)
                 }
                 composable<CorsaRoute.PasswordResetScreen> {
-                    SplashScreen()
+                    val resetPasswordViewModel = koinViewModel<ResetPasswordViewModel>()
+                    val state by resetPasswordViewModel.resetPasswordState.collectAsStateWithLifecycle()
+                    ResetPasswordScreen(
+                        navController,
+                        state,
+                        resetPasswordViewModel.resetPasswordActions
+                    )
                 }
             }
         }
