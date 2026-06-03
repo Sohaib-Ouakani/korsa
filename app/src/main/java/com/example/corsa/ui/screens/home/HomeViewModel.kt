@@ -3,7 +3,6 @@ package com.example.corsa.ui.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.location.LocationProvider
-import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
 import com.example.corsa.utils.WeatherCondition
@@ -11,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -46,9 +44,6 @@ class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationProvider: LocationProvider
 ): ViewModel() {
-    private val _profile = MutableStateFlow<Profile?>(null)
-
-    // Derived from profile reactively
     private val _state = MutableStateFlow<HomeState?>(null)
     val state: StateFlow<HomeState?> = _state
 
@@ -58,29 +53,29 @@ class HomeViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            val loaded = profilesRepository.getMyProfile()
-            val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
-            val goalKm = loaded.level * 10f
+            try {
+                val loaded = profilesRepository.getMyProfile()
+                val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
+                val goalKm = loaded.level * 10f
 
-            _profile.value = loaded
-            _state.value = HomeState(
-                goalKm = goalKm,
-                currentKm = weeklyKm,
-                progress = weeklyKm / goalKm,
-                myProfileUrl = if(loaded.avatarPath != null) profilesRepository.avatarUrl(loaded.avatarPath) else null
-            )
-            launch {
-                var locationInfo = LocationInfo()
-                var appError: AppError = AppError.Absent
-                try {
-                    locationInfo = getLocationInfo()
-                } catch (e: Exception) {
-                    appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                _state.value = HomeState(
+                    goalKm = goalKm,
+                    currentKm = weeklyKm,
+                    progress = weeklyKm / goalKm,
+                    myProfileUrl = if(loaded.avatarPath != null) profilesRepository.avatarUrl(loaded.avatarPath) else null
+                )
+                launch {
+                    var locationInfo = LocationInfo()
+                    var appError: AppError = AppError.Absent
+                    try {
+                        locationInfo = getLocationInfo()
+                    } catch (e: Exception) {
+                        appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                    }
+                    _state.updateState(locationInfo = locationInfo, appError = appError)
                 }
-                _state.update { it?.copy(
-                    locationInfo = locationInfo,
-                    appError = appError
-                ) }
+            } catch (e: Exception) {
+                _state.updateState(appError = AppError.Present(e.message ?: "Failed to load profile"))
             }
         }
     }
@@ -120,5 +115,24 @@ class HomeViewModel(
 
             WeatherCondition.fromWmoCode(weatherCode)
         }
+    }
+
+    private fun MutableStateFlow<HomeState?>.updateState(
+        goalKm: Float? = null,
+        currentKm: Float? = null,
+        progress: Float? = null,
+        locationInfo: LocationInfo? = null,
+        myProfileUrl: String? = null,
+        appError: AppError? = null
+    ) {
+        val current = value ?: return
+        value = current.copy(
+            goalKm = goalKm ?: current.goalKm,
+            currentKm = currentKm ?: current.currentKm,
+            progress = progress ?: current.progress,
+            locationInfo = locationInfo ?: current.locationInfo,
+            myProfileUrl = myProfileUrl ?: current.myProfileUrl,
+            appError = appError ?: current.appError
+        )
     }
 }
