@@ -29,7 +29,7 @@ import org.koin.compose.koinInject
 fun LoginScreen(
     navController: NavController,
     state: AuthState,
-    authActions: AuthActions
+    actions: AuthActions
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -51,14 +51,17 @@ fun LoginScreen(
         PasswordResetDialog(
             onDismiss = { showResetDialog = false },
             onConfirm = { resetEmail ->
-                authActions.resetPassword(resetEmail)
+                actions.resetPassword(resetEmail)
                 showResetDialog = false
             }
         )
     }
 
     Scaffold(
-        topBar = { LoginScreenTopBar(onBack = { navController.popBackStack() }) },
+        topBar = { LoginScreenTopBar(onBack = {
+            navController.popBackStack()
+            actions.clearError()
+        }) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
@@ -90,7 +93,7 @@ fun LoginScreen(
                     enabled = !state.isLoading
                 )
                 LoginButton(
-                    onClick = { authActions.loginWithEmail(email, password) },
+                    onClick = { actions.loginWithEmail(email, password) },
                     isLoading = state.isLoading
                 )
             }

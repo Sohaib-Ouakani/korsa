@@ -29,7 +29,7 @@ import org.koin.compose.koinInject
 fun RegisterScreen(
     navController: NavController,
     state: AuthState,
-    authActions: AuthActions
+    actions: AuthActions
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -49,7 +49,10 @@ fun RegisterScreen(
     }
 
     Scaffold(
-        topBar = { RegisterScreenTopBar(onBack = { navController.popBackStack() }) },
+        topBar = { RegisterScreenTopBar(onBack = {
+            navController.popBackStack()
+            actions.clearError()
+        }) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
@@ -80,7 +83,7 @@ fun RegisterScreen(
                     enabled = !state.isLoading
                 )
                 RegisterButton(
-                    onClick = { authActions.registerWithEmail(email, password) },
+                    onClick = { actions.registerWithEmail(email, password) },
                     isLoading = state.isLoading
                 )
             }

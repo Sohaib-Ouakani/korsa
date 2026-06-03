@@ -37,7 +37,10 @@ val appModule = module {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_KEY
         ) {
-            install(Auth)
+            install(Auth) {
+                scheme = "corsa"
+                host = "reset-password"
+            }
             install(ComposeAuth) {
                 googleNativeLogin(BuildConfig.GOOGLE_CLIENT_ID)
             }

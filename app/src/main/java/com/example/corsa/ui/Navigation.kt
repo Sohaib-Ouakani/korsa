@@ -1,14 +1,18 @@
 package com.example.corsa.ui
 
 import android.content.Intent
-import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.corsa.ui.CorsaRoute.*
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.AppSessionStatus
 import com.example.corsa.ui.screens.friends.FollowScreen
@@ -55,21 +59,18 @@ sealed interface CorsaRoute {
 @Composable
 fun CorsaNavGraph(
     navController: NavHostController,
-    intent: Intent
+    deepLinkUri: String? = null
 ) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
+    val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
 
-    DeepLink.resolve(intent)?.let { deepLink ->
-        when (deepLink) {
-            is DeepLink.PasswordReset -> { sessionViewModel.handleDeeplinks(
-                deepLink.intent,
-                onSessionSuccess = { navController.navigate(CorsaRoute.PasswordResetScreen) }
-            ) }
-            is DeepLink.Run -> navController.navigate(CorsaRoute.SharedRunScreen(deepLink.token))
-        }
+    val pendingShareToken = remember(deepLinkUri) {
+        deepLinkUri?.toUri()
+            ?.takeIf { it.scheme == "corsa" && it.host == "run" }
+            ?.lastPathSegment
     }
 
-    val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
+    var navigatedToShare by remember { mutableStateOf(false) }
 
     when (appSessionStatus) {
         AppSessionStatus.Loading -> SplashScreen()
@@ -79,7 +80,10 @@ fun CorsaNavGraph(
                 startDestination = CorsaRoute.AuthScreen
             ) {
                 composable<CorsaRoute.AuthScreen> {
-                    AuthScreen(navController = navController)
+                    AuthScreen(
+                        navController = navController,
+                        redirectedFromDeepLink = (pendingShareToken != null)
+                    )
                 }
                 composable<CorsaRoute.LoginScreen> {
                     val authViewModel = koinViewModel<AuthViewModel>()
@@ -87,7 +91,7 @@ fun CorsaNavGraph(
                     LoginScreen(
                         navController = navController,
                         state = state,
-                        authActions = authViewModel.authActions,
+                        actions = authViewModel.authActions,
                     )
                 }
                 composable<CorsaRoute.RegisterScreen> {
@@ -96,7 +100,7 @@ fun CorsaNavGraph(
                     RegisterScreen(
                         navController = navController,
                         state = state,
-                        authActions = authViewModel.authActions
+                        actions = authViewModel.authActions
                     )
                 }
             }
@@ -104,14 +108,24 @@ fun CorsaNavGraph(
         AppSessionStatus.Authenticated -> {
             NavHost(
                 navController = navController,
-                startDestination = CorsaRoute.Home
+                startDestination = Home
             ) {
-                composable<CorsaRoute.Home> {
+                composable<Home> {
+                    LaunchedEffect(pendingShareToken) {
+                        if (pendingShareToken != null && !navigatedToShare) {
+                            navigatedToShare = true
+                            navController.navigate(SharedRunScreen(pendingShareToken))
+                        }
+                    }
+
                     val homeViewModel = koinViewModel<HomeViewModel>()
                     val state by homeViewModel.state.collectAsStateWithLifecycle()
-                    HomeScreen(state, navController)
+                    HomeScreen(
+                        state,
+                        navController,
+                    )
                 }
-                composable<CorsaRoute.RunScreen> {
+                composable<RunScreen> {
                     val runViewModel = koinViewModel<RunViewModel>()
                     val state by runViewModel.uiState.collectAsStateWithLifecycle()
                     val actions = runViewModel.runActions
@@ -154,7 +168,7 @@ fun CorsaNavGraph(
                         actions = runDetailViewModel.runDetailActions
                     )
                 }
-                composable<CorsaRoute.SharedRunScreen> {
+                composable<SharedRunScreen> {
                     val runDetailViewModel = koinViewModel<RunDetailViewModel>()
                     val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
                     RunDetailScreen(
@@ -172,38 +186,8 @@ fun CorsaNavGraph(
                     val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
                     AddFollowScreen(navController, searchState, friendsVM.followAction)
                 }
-                composable<CorsaRoute.PasswordResetScreen> {
-                    SplashScreen()
-                }
             }
         }
-    }
-}
-
-private sealed interface DeepLink {
-    data class PasswordReset(val intent: Intent) : DeepLink {
-    }
-
-    data class Run(val token: String) : DeepLink {
-    }
-
-    companion object {
-        fun resolve(intent: Intent): DeepLink? {
-            return intent.data?.toString()?.toUri()?.let { uri ->
-                when (uri.host) {
-                    "run" -> {
-                        val token = uri.pathSegments.firstOrNull()
-                        if (token != null) Run(token) else null
-                    }
-
-                    "auth" if uri.path?.startsWith("/v1/verify") == true &&
-                            uri.getQueryParameter("type") == "recovery" -> {
-                        PasswordReset(intent)
-                    }
-
-                    else -> null
-                }
-            }
-        }
+        AppSessionStatus.External -> TODO()
     }
 }

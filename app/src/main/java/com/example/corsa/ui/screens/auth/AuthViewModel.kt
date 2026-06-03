@@ -17,7 +17,8 @@ data class AuthState(
 data class AuthActions(
     val loginWithEmail: (email: String, password: String) -> Unit,
     val registerWithEmail: (email: String, password: String) -> Unit,
-    val resetPassword: (email: String) -> Unit
+    val resetPassword: (email: String) -> Unit,
+    val clearError: () -> Unit
 )
 
 class AuthViewModel(
@@ -27,7 +28,8 @@ class AuthViewModel(
     val authActions = AuthActions(
         loginWithEmail = ::loginWithEmail,
         registerWithEmail = ::registerWithEmail,
-        resetPassword = ::resetPassword
+        resetPassword = ::resetPassword,
+        clearError = ::clearError
     )
 
     private val _authState = MutableStateFlow(AuthState(
@@ -79,6 +81,12 @@ class AuthViewModel(
                 _authState.updateState(error = AppError.Present(e.message ?: "Error while password reset"))
             }
         }
+    }
+
+    private fun clearError() {
+        _authState.updateState(
+            error = AppError.Absent
+        )
     }
 
     private fun MutableStateFlow<AuthState>.updateState(
