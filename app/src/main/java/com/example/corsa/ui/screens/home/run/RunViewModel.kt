@@ -114,15 +114,24 @@ class RunViewModel(
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState
     ) { sw, run, save ->
-        val pace = if (run.distanceMeters > 0)
-            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
-        else 0
+        val pace = calculatePace(sw.elapsedTime, run.distanceMeters)
         RunUiState(sw, run.copy(currentPaceSecPerKm = pace), save)
     }.stateIn(viewModelScope, SharingStarted.Lazily, RunUiState())
 
     init {
         loadProfile()
         startAndBindService()
+    }
+    
+    private fun loadProfile() {
+        viewModelScope.launch {
+            try {
+                _profile.value = profilesRepository.getMyProfile()
+            }
+            catch (e: Exception) {
+                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
+            }
+        }
     }
 
     private fun startAndBindService() {
@@ -162,9 +171,7 @@ class RunViewModel(
             _saveState.value = SaveState.Validation("Run too short to save")
             return
         }
-        val pace = if (run.distanceMeters > 0)
-            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
-        else 0
+        val pace = calculatePace(sw.elapsedTime, run.distanceMeters)
         val endMs = Clock.System.now().toEpochMilliseconds()
         viewModelScope.launch { saveNewRun(userId, run.copy(currentPaceSecPerKm = pace), endMs) }
     }
@@ -190,19 +197,13 @@ class RunViewModel(
         }
     }
 
-    private fun loadProfile() {
-        viewModelScope.launch {
-            try { _profile.update { profilesRepository.getMyProfile() } }
-            catch (e: Exception) {
-                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
-            }
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         appContext.unbindService(connection)
         // intentionally NOT calling stopService here —
         // if the user backgrounds the app mid-run the service keeps going
     }
+
+    private fun calculatePace(elapsedMs: Long, distanceMeters: Float): Int =
+        if (distanceMeters > 0) (elapsedMs / 1000f / (distanceMeters / 1000f)).toInt() else 0
 }
