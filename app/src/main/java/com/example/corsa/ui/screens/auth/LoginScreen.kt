@@ -20,9 +20,8 @@ import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
-import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
-import io.github.jan.supabase.compose.auth.composeAuth
 import org.koin.compose.koinInject
 
 @Composable
@@ -31,10 +30,10 @@ fun LoginScreen(
     state: LoginState,
     actions: LoginActions
 ) {
-    val supabase = koinInject<SupabaseClient>()
-    val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val composeAuth = koinInject<ComposeAuth>()
+    val googleAuthState = composeAuth.rememberSignInWithGoogle()
 
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
         when (state.error) {
             is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)

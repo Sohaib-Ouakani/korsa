@@ -19,8 +19,10 @@ import com.example.corsa.ui.screens.profiledetail.ProfileDetailViewModel
 import com.example.corsa.ui.screens.resetpassword.ResetPasswordViewModel
 import com.example.corsa.ui.screens.rundetail.RunDetailViewModel
 import com.example.corsa.ui.screens.stats.StatsScreenViewModel
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.compose.auth.ComposeAuth
+import io.github.jan.supabase.compose.auth.composeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -53,6 +55,7 @@ val appModule = module {
         }
 
     }
+    single { get<SupabaseClient>().composeAuth }
     single {
         HttpClient(OkHttp) {
             install(ContentNegotiation) {

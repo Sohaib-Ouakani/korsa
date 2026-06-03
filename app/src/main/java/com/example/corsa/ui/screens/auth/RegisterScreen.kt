@@ -20,9 +20,8 @@ import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
-import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
-import io.github.jan.supabase.compose.auth.composeAuth
 import org.koin.compose.koinInject
 
 @Composable
@@ -31,9 +30,8 @@ fun RegisterScreen(
     state: RegisterState,
     actions: RegisterActions
 ) {
-    val supabase = koinInject<SupabaseClient>() // TODO
-
-    val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
+    val composeAuth = koinInject<ComposeAuth>()
+    val googleAuthState = composeAuth.rememberSignInWithGoogle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
