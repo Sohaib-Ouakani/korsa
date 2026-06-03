@@ -2,20 +2,24 @@ package com.example.corsa.ui.screens.stats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.TopBar
@@ -57,7 +64,7 @@ fun StatsScreen(
 
 
     Scaffold(
-        topBar = { TopBar(navController) },
+        topBar = { TopBar(navController, state.profile.avatarUrl) },
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { contentPadding ->
@@ -96,17 +103,33 @@ private fun ProfileHeader(
             modifier = Modifier.weight(1f), // occupa lo spazio senza spingere l'avatar
         )
         Spacer(Modifier.width(Spacing.md))
-        Box(
-            modifier = Modifier
-                .size(Size.l)
-                .clip(CircleShape)
-                .background(cs.secondaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = infoEntries.displayName.first().uppercase(),
-                style = MaterialTheme.typography.titleMedium,
+        if (infoEntries.avatarUrl != null) {
+            AsyncImage(
+                model = infoEntries.avatarUrl,
+                contentDescription = "${infoEntries.displayName}'s avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(Size.l)
+                    .clip(CircleShape)
+                    .background(cs.secondaryContainer),
             )
+        } else {
+            Surface(
+                modifier = Modifier
+                    .size(Size.l)
+                    .clip(CircleShape)
+                    .background(cs.secondaryContainer),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxSize(),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }

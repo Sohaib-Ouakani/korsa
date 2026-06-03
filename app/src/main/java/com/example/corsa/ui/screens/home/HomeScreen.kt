@@ -33,6 +33,7 @@ import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
+import com.example.corsa.utils.WeatherCondition
 
 @Composable
 fun HomeScreen(
@@ -80,7 +81,7 @@ private fun Content(
         }
     }
     Scaffold(
-        topBar = { TopBar(navController) },
+        topBar = { TopBar(navController, state.myProfileUrl) },
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
@@ -94,7 +95,7 @@ private fun Content(
 
             // ── Location label ───────────────────────────────────────────────
             // TODO: we can add new label to display other stats, like meteo
-            LocationLabel(cs, state.locationName)
+            LocationLabel(cs, state.locationInfo)
 
             Spacer(Modifier.height(Spacing.md))
 
@@ -166,7 +167,7 @@ private fun ColumnScope.StartButton(
 }
 
 @Composable
-private fun LocationLabel(cs: ColorScheme, locationName: String?) {
+private fun LocationLabel(cs: ColorScheme, locationInfo: LocationInfo) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -178,9 +179,9 @@ private fun LocationLabel(cs: ColorScheme, locationName: String?) {
             modifier = Modifier.size(Size.s)
         )
         Spacer(Modifier.width(Spacing.sm))
-        if (locationName != null){
+        if (locationInfo.cityName != null){
             Text(
-                text = locationName,
+                text = locationInfo.cityName,
                 color = cs.primary,
                 style = MaterialTheme.typography.labelSmall
             )
@@ -191,6 +192,12 @@ private fun LocationLabel(cs: ColorScheme, locationName: String?) {
                 strokeWidth = 1.dp,
             )
         }
+        Spacer(Modifier.width(Spacing.sm))
+        Icon(
+            imageVector = locationInfo.weatherCode.icon,
+            contentDescription = "Weather",
+            modifier = Modifier.size(Size.s)
+        )
     }
 }
 

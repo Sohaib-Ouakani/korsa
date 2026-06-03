@@ -46,6 +46,7 @@ data class SearchState(
     val friendsName: List<Profile> = emptyList(),
     val notFriends: List<Profile> = emptyList(),
     val error: AppError = AppError.Absent,
+    val myprofileUrl: String? = null,
 )
 
 data class FollowAction(
@@ -53,6 +54,7 @@ data class FollowAction(
     val loadRanking:  (SortBy) -> Unit,
     val buildAvatarUrl: (String) -> String,
     val loadFeed: () -> Unit,
+    val getAvatarUrl: (String) -> String?
 )
 
 
@@ -68,6 +70,7 @@ class FollowingViewModel(
         loadRanking = ::loadRanking,
         buildAvatarUrl = ::buildAvatarUrl,
         loadFeed = ::loadFeed,
+        getAvatarUrl = ::getAvatarUrl
     )
 
     private val _followState = MutableStateFlow(FollowState(isLoading = true))
@@ -84,6 +87,7 @@ class FollowingViewModel(
 
     init {
         loadFriendsProfiles()
+        getMyprofileUrl()
     }
 
     // ── Load & cache friends profiles once ──────────────────────────────────
@@ -110,6 +114,23 @@ class FollowingViewModel(
         }
         }
 
+    }
+
+    fun getMyprofileUrl() {
+        viewModelScope.launch {
+            _searchState.updateSearchState(
+                isLoading = true,
+                error = AppError.Absent,
+            )
+            try {
+                profilesRepository.getMyUserEntry().avatarUrl
+               _searchState.updateSearchState(myprofileUrl =  profilesRepository.getMyUserEntry().avatarUrl)
+            } catch (e: Exception) {
+                _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error loading Profile immage"))
+            } finally {
+                _searchState.updateSearchState(isLoading = false)
+            }
+        }
     }
 
     // ── Ranking ─────────────────────────────────────────────────────────────
@@ -187,6 +208,15 @@ class FollowingViewModel(
         }
     }
 
+    fun getAvatarUrl(userId: String): String? {
+        var userImgPath: String? = null
+        cachedFriendProfiles.forEach { profile -> if(profile.id == userId)  userImgPath = profile.avatarPath}
+        if(userImgPath != null){
+            return profilesRepository.avatarUrl(userImgPath)
+        }
+        return null
+    }
+
     private fun MutableStateFlow<FollowState>.updateFollowState(
         isLoading: Boolean? = null,
         rankEntry: List<UserRankEntry>? = null,
@@ -206,12 +236,14 @@ class FollowingViewModel(
         isLoading: Boolean? = null,
         friendsName: List<Profile>? = null,
         notFriends: List<Profile>? = null,
+        myprofileUrl: String? = null,
         error: AppError? = null,
     ){
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
             friendsName = friendsName ?: value.friendsName,
             notFriends = notFriends?: value.notFriends,
+            myprofileUrl = myprofileUrl?: value.myprofileUrl,
             error = error ?: value.error
         )
 
