@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.utils.AppError
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -20,7 +19,7 @@ data class LoginState(
 
 data class LoginActions(
     val loginWithEmail: () -> Unit,
-    val resetPassword: (email: String) -> Unit,
+    val resetPasswordForEmail: (email: String) -> Unit,
     val clearError: () -> Unit,
     val onEmailChange: (String) -> Unit,
     val onPasswordChange: (String) -> Unit,
@@ -34,7 +33,7 @@ class LoginViewModel(
 
     val loginActions = LoginActions(
         loginWithEmail = ::loginWithEmail,
-        resetPassword = ::resetPassword,
+        resetPasswordForEmail = ::resetPasswordForEmail,
         clearError = ::clearError,
         onEmailChange = { _loginState.updateState(email = it) },
         onPasswordChange = { _loginState.updateState(password = it) },
@@ -66,10 +65,10 @@ class LoginViewModel(
         }
     }
 
-    private fun resetPassword(email: String) {
+    private fun resetPasswordForEmail(email: String) {
         viewModelScope.launch {
             try {
-                authRepository.resetPassword(email)
+                authRepository.resetPasswordForEmail(email)
             } catch (e: Exception) {
                 _loginState.updateState(error = AppError.Present(e.message ?: "Error while password reset"))
             }

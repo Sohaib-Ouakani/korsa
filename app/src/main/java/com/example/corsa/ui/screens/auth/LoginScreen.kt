@@ -45,7 +45,7 @@ fun LoginScreen(
         PasswordResetDialog(
             onDismiss = { actions.onShowResetDialog(false) },
             onConfirm = { resetEmail ->
-                actions.resetPassword(resetEmail)
+                actions.resetPasswordForEmail(resetEmail)
                 actions.onShowResetDialog(false)
             }
         )

@@ -2,7 +2,6 @@ package com.example.corsa.data.repositories
 
 
 import android.content.Intent
-import android.util.Log
 import com.example.corsa.data.model.Profile
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -18,8 +17,9 @@ interface AuthRepository {
     suspend fun logout()
     suspend fun getEmail(): String
     suspend fun updatePassword(oldPassword: String, newPassword: String)
+    suspend fun resetPassword(newPassword: String)
     fun isEmailUser(): Boolean
-    suspend fun resetPassword(email: String)
+    suspend fun resetPasswordForEmail(emailToWriteTo: String)
     fun handleDeeplinks(
         intent: Intent,
         onSessionSuccess: (UserSession) -> Unit,
@@ -81,6 +81,14 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun resetPassword(newPassword: String) {
+        supabase.auth.currentUserOrNull() ?: error("User not authenticated")
+
+        supabase.auth.updateUser {
+            password = newPassword
+        }
+    }
+
     override fun isEmailUser(): Boolean {
         val identities = supabase.auth.currentUserOrNull()?.identities
             ?: return false
@@ -88,9 +96,9 @@ class AuthRepositoryImpl(
         return identities.any { it.provider == "email" }
     }
 
-    override suspend fun resetPassword(email: String) {
+    override suspend fun resetPasswordForEmail(emailToWriteTo: String) {
         supabase.auth.resetPasswordForEmail(
-            email,
+            emailToWriteTo,
             "corsa://reset-password"
         )
     }
