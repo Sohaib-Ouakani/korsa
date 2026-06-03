@@ -1,13 +1,11 @@
 package com.example.corsa.ui
 
-import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -65,14 +63,7 @@ fun CorsaNavGraph(
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
 
-    var pendingShareToken by remember(deepLink) {
-        mutableStateOf(
-            when(deepLink) {
-                is DeepLink.SharedRun -> deepLink.shareToken
-                null -> null
-            }
-        )
-    }
+    var origin by remember(deepLink) { mutableStateOf(deepLink) }
 
     when (appSessionStatus) {
         AppSessionStatus.Loading -> SplashScreen()
@@ -84,7 +75,7 @@ fun CorsaNavGraph(
                 composable<CorsaRoute.AuthScreen> {
                     AuthScreen(
                         navController = navController,
-                        redirectedFromDeepLink = (pendingShareToken != null)
+                        redirectedFromRunDeepLink = (origin is DeepLink.SharedRun)
                     )
                 }
                 composable<CorsaRoute.LoginScreen> {
@@ -113,10 +104,17 @@ fun CorsaNavGraph(
                 startDestination = Home
             ) {
                 composable<Home> {
-                    LaunchedEffect(pendingShareToken) {
-                        pendingShareToken?.let { token ->
-                            pendingShareToken = null
-                            navController.navigate(SharedRunScreen(token))
+                    LaunchedEffect(origin) {
+                        when(val deepLink = origin) {
+                            DeepLink.ResetPassword -> {
+                                origin = null
+                                navController.navigate(PasswordResetScreen)
+                            }
+                            is DeepLink.SharedRun -> {
+                                origin = null
+                                navController.navigate(SharedRunScreen(deepLink.shareToken))
+                            }
+                            null -> { }
                         }
                     }
 
@@ -188,8 +186,10 @@ fun CorsaNavGraph(
                     val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
                     AddFollowScreen(navController, searchState, friendsVM.followAction)
                 }
+                composable<CorsaRoute.PasswordResetScreen> {
+                    SplashScreen()
+                }
             }
         }
-        AppSessionStatus.External -> TODO()
     }
 }

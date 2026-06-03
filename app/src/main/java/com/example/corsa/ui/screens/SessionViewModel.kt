@@ -19,8 +19,7 @@ import kotlinx.coroutines.flow.onEach
 enum class AppSessionStatus {
     Loading,
     NotAuthenticated,
-    Authenticated,
-    External
+    Authenticated
 }
 
 class SessionViewModel(
@@ -33,12 +32,7 @@ class SessionViewModel(
         authRepository.sessionStatus
             .map { status ->
                 when (status) {
-                    is SessionStatus.Authenticated -> {
-                        when (status.source) {
-                            SessionSource.External -> AppSessionStatus.External
-                            else -> AppSessionStatus.Authenticated
-                        }
-                    }
+                    is SessionStatus.Authenticated -> AppSessionStatus.Authenticated
                     is SessionStatus.Initializing -> AppSessionStatus.Loading
                     else -> AppSessionStatus.NotAuthenticated
                 }

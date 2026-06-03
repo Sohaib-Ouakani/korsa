@@ -12,18 +12,17 @@ import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
-import com.example.corsa.utils.AppError
 
 @Composable
 fun AuthScreen(
     navController: NavController,
-    redirectedFromDeepLink: Boolean
+    redirectedFromRunDeepLink: Boolean
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val rememberRedirectedFromDeepLink = remember { redirectedFromDeepLink }
+    val rememberRedirectedFromDeepLink = remember { redirectedFromRunDeepLink }
 
     LaunchedEffect(rememberRedirectedFromDeepLink) {
-        if (redirectedFromDeepLink) {
+        if (redirectedFromRunDeepLink) {
             snackbarHostState.showSnackbar(
                 "Devi prima accedere o creare un account. " +
                             "\nDopo averlo fatto prova a riutillizare il link"

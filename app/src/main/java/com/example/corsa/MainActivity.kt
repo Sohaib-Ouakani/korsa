@@ -34,8 +34,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-sealed class DeepLink {
-    data class SharedRun(val shareToken: String) : DeepLink()
+sealed interface DeepLink {
+    data class SharedRun(val shareToken: String): DeepLink
+    data object ResetPassword: DeepLink
 
     companion object {
         fun resolve(uri: Uri?): DeepLink? {
@@ -44,6 +45,7 @@ sealed class DeepLink {
 
             return when (uri.host) {
                 "run" -> uri.lastPathSegment?.let { SharedRun(it) }
+                "reset-password" -> ResetPassword
                 else -> null
             }
         }
@@ -55,10 +57,11 @@ class AppIntentResolver(
 ) {
 
     fun resolve(intent: Intent): DeepLink? {
-        supabase.handleDeeplinks(
-            intent,
-            onError = { Log.e("AppIntentResolver", "Error on handling intent")}
-        )
+        try {
+            supabase.handleDeeplinks(intent)
+        } catch (e: Exception) {
+            Log.e("AppIntentResolver", e.message ?: "Error on handling intent")
+        }
 
         return DeepLink.resolve(intent.data)
     }
