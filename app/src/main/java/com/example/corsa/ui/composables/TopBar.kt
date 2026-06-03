@@ -37,24 +37,29 @@ fun TopBar(
                     contentColor = MaterialTheme.colorScheme.primary,
                 )
             ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "Profile",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape),
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Profile",
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
+                AvatarIcon(avatarUrl)
             }
         }
     )
+}
+
+@Composable
+private fun AvatarIcon(avatarUrl: String?) {
+    if (avatarUrl != null) {
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = "Profile",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape),
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Filled.Person,
+            contentDescription = "Profile",
+            modifier = Modifier.size(22.dp),
+        )
+    }
 }
 
