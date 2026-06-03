@@ -2,6 +2,7 @@ package com.example.corsa.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.corsa.data.cache.LocationCache
 import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
@@ -43,7 +44,8 @@ sealed class ApiEndpoint {
 }
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val locationCache: LocationCache
 ): ViewModel() {
     private val _state = MutableStateFlow(HomeState(
         isLoading = true
@@ -71,13 +73,15 @@ class HomeViewModel(
                     myProfileUrl = profileUrl
                 )
                 launch {
-                    var locationInfo = LocationInfo()
                     var appError: AppError = AppError.Absent
-                    try {
-                        locationInfo = getLocationInfo()
-                    } catch (e: Exception) {
-                        appError = AppError.Present(e.message ?: "Failed to fetch location info")
-                    }
+                    val locationInfo = locationCache.locationInfo
+                        ?.takeIf { locationCache.isValid }
+                        ?: try {
+                            getLocationInfo().also { locationCache.store(it) }
+                        } catch (e: Exception) {
+                            appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                            LocationInfo()
+                        }
                     _state.updateState(locationInfo = locationInfo, appError = appError)
                 }
             } catch (e: Exception) {
