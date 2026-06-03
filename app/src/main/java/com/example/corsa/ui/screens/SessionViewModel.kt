@@ -47,15 +47,4 @@ class SessionViewModel(
             .onEach { _appSessionStatus.value = it }
             .launchIn(viewModelScope)
     }
-
-    fun handleDeeplinks(
-        intent: Intent,
-        onSessionSuccess: () -> Unit,
-    ) {
-        authRepository.handleDeeplinks(
-            intent = intent,
-            onSessionSuccess = { onSessionSuccess() },
-            onError = { Log.e("password-reset", it.message ?: "Error while resolving auth token") }
-        )
-    }
 }

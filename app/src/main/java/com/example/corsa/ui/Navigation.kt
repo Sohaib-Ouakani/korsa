@@ -64,13 +64,13 @@ fun CorsaNavGraph(
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
 
-    val pendingShareToken = remember(deepLinkUri) {
-        deepLinkUri?.toUri()
-            ?.takeIf { it.scheme == "corsa" && it.host == "run" }
-            ?.lastPathSegment
+    var pendingShareToken by remember(deepLinkUri) {
+        mutableStateOf(
+            deepLinkUri?.toUri()
+                ?.takeIf { it.scheme == "corsa" && it.host == "run" }
+                ?.lastPathSegment
+        )
     }
-
-    var navigatedToShare by remember { mutableStateOf(false) }
 
     when (appSessionStatus) {
         AppSessionStatus.Loading -> SplashScreen()
@@ -112,9 +112,9 @@ fun CorsaNavGraph(
             ) {
                 composable<Home> {
                     LaunchedEffect(pendingShareToken) {
-                        if (pendingShareToken != null && !navigatedToShare) {
-                            navigatedToShare = true
-                            navController.navigate(SharedRunScreen(pendingShareToken))
+                        pendingShareToken?.let { token ->
+                            pendingShareToken = null
+                            navController.navigate(SharedRunScreen(token))
                         }
                     }
 
@@ -135,7 +135,7 @@ fun CorsaNavGraph(
                         actions = actions,
                     )
                 }
-                composable<CorsaRoute.StatsScreen> {
+                composable<StatsScreen> {
                     val statsViewModel = koinViewModel<StatsScreenViewModel>()
                     val state by statsViewModel.statsState.collectAsStateWithLifecycle()
                     StatsScreen(
