@@ -41,7 +41,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="corsa" android:host="run" />
+                <data android:scheme="corsa" />
+                <data android:host="run" />
+                <data android:host="reset-password" />
             </intent-filter>
         </activity>
     </application>

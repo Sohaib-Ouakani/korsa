@@ -3,6 +3,8 @@ package com.example.corsa.ui.screens.auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -13,10 +15,24 @@ import com.example.corsa.ui.theme.Spacing
 
 @Composable
 fun AuthScreen(
-    navController: NavController
+    navController: NavController,
+    redirectedFromRunDeepLink: Boolean
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val rememberRedirectedFromDeepLink = remember { redirectedFromRunDeepLink }
+
+    LaunchedEffect(rememberRedirectedFromDeepLink) {
+        if (redirectedFromRunDeepLink) {
+            snackbarHostState.showSnackbar(
+                "Devi prima accedere o creare un account. " +
+                            "\nDopo averlo fatto prova a riutillizare il link"
+            )
+        }
+    }
+
     Scaffold(
         topBar = { LoginTopBar() },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier

@@ -3,17 +3,23 @@ package com.example.corsa.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.corsa.DeepLink
+import com.example.corsa.ui.CorsaRoute.*
 import com.example.corsa.ui.screens.SessionViewModel
-import com.example.corsa.ui.screens.StartDestination
+import com.example.corsa.ui.screens.AppSessionStatus
 import com.example.corsa.ui.screens.friends.FollowScreen
 import com.example.corsa.ui.screens.auth.AuthScreen
-import com.example.corsa.ui.screens.auth.AuthViewModel
 import com.example.corsa.ui.screens.auth.LoginScreen
+import com.example.corsa.ui.screens.auth.LoginViewModel
 import com.example.corsa.ui.screens.auth.RegisterScreen
+import com.example.corsa.ui.screens.auth.RegisterViewModel
 import com.example.corsa.ui.screens.friends.AddFollowScreen
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.home.HomeScreen
@@ -29,9 +35,10 @@ import com.example.corsa.ui.screens.stats.StatsScreen
 import com.example.corsa.ui.screens.stats.StatsScreenViewModel
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
-import androidx.core.net.toUri
 import com.example.corsa.ui.screens.home.run.RunViewModel
 import com.example.corsa.ui.screens.home.run.StopWatchScreen
+import com.example.corsa.ui.screens.resetpassword.ResetPasswordScreen
+import com.example.corsa.ui.screens.resetpassword.ResetPasswordViewModel
 
 sealed interface CorsaRoute {
     @Serializable data object Home : CorsaRoute
@@ -47,66 +54,81 @@ sealed interface CorsaRoute {
     @Serializable data class ProfileDetailScreen(val userId: String) : CorsaRoute
 
     @Serializable data class RunDetailScreen(val runId: String) : CorsaRoute
-    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute  // ← add this
+    @Serializable data class SharedRunScreen(val shareToken: String) : CorsaRoute
+    @Serializable data object PasswordResetScreen : CorsaRoute
 }
 
 @Composable
 fun CorsaNavGraph(
     navController: NavHostController,
-    deepLinkUri: String? = null
+    deepLink: DeepLink? = null
 ) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
-    val startDestination by sessionViewModel.startDestination.collectAsStateWithLifecycle()
+    val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
 
-    LaunchedEffect(deepLinkUri) {
-        if (deepLinkUri != null) {
-            val uri = deepLinkUri.toUri()
-            if (uri.scheme == "corsa" && uri.host == "run") {
-                val token = uri.lastPathSegment
-                if (token != null) {
-                    navController.navigate(CorsaRoute.SharedRunScreen(token))
-                }
-            }
-        }
-    }
+    var origin by remember(deepLink) { mutableStateOf(deepLink) }
 
-    when (startDestination) {
-        StartDestination.Loading -> SplashScreen()
-        else -> {
+    when (appSessionStatus) {
+        AppSessionStatus.Loading -> SplashScreen()
+        AppSessionStatus.NotAuthenticated -> {
             NavHost(
                 navController = navController,
-                startDestination = when (startDestination) {
-                    StartDestination.Home -> CorsaRoute.Home
-                    else -> CorsaRoute.AuthScreen
-                }
+                startDestination = CorsaRoute.AuthScreen
             ) {
                 composable<CorsaRoute.AuthScreen> {
-                    AuthScreen(navController = navController)
+                    AuthScreen(
+                        navController = navController,
+                        redirectedFromRunDeepLink = (origin is DeepLink.SharedRun)
+                    )
                 }
                 composable<CorsaRoute.LoginScreen> {
-                    val authViewModel = koinViewModel<AuthViewModel>()
-                    val state by authViewModel.authState.collectAsStateWithLifecycle()
+                    val loginViewModel = koinViewModel<LoginViewModel>()
+                    val state by loginViewModel.loginState.collectAsStateWithLifecycle()
                     LoginScreen(
                         navController = navController,
                         state = state,
-                        authActions = authViewModel.authActions,
+                        actions = loginViewModel.loginActions,
                     )
                 }
                 composable<CorsaRoute.RegisterScreen> {
-                    val authViewModel = koinViewModel<AuthViewModel>()
-                    val state by authViewModel.authState.collectAsStateWithLifecycle()
+                    val registerViewModel = koinViewModel<RegisterViewModel>()
+                    val state by registerViewModel.registerState.collectAsStateWithLifecycle()
                     RegisterScreen(
                         navController = navController,
                         state = state,
-                        authActions = authViewModel.authActions
+                        actions = registerViewModel.registerActions
                     )
                 }
-                composable<CorsaRoute.Home> {
+            }
+        }
+        AppSessionStatus.Authenticated -> {
+            NavHost(
+                navController = navController,
+                startDestination = Home
+            ) {
+                composable<Home> {
+                    LaunchedEffect(origin) {
+                        when(val deepLink = origin) {
+                            DeepLink.ResetPassword -> {
+                                origin = null
+                                navController.navigate(PasswordResetScreen)
+                            }
+                            is DeepLink.SharedRun -> {
+                                origin = null
+                                navController.navigate(SharedRunScreen(deepLink.shareToken))
+                            }
+                            null -> { }
+                        }
+                    }
+
                     val homeViewModel = koinViewModel<HomeViewModel>()
                     val state by homeViewModel.state.collectAsStateWithLifecycle()
-                    HomeScreen(state, navController)
+                    HomeScreen(
+                        state,
+                        navController,
+                    )
                 }
-                composable<CorsaRoute.RunScreen> {
+                composable<RunScreen> {
                     val runViewModel = koinViewModel<RunViewModel>()
                     val state by runViewModel.uiState.collectAsStateWithLifecycle()
                     val actions = runViewModel.runActions
@@ -116,13 +138,13 @@ fun CorsaNavGraph(
                         actions = actions,
                     )
                 }
-                composable<CorsaRoute.StatsScreen> {
+                composable<StatsScreen> {
                     val statsViewModel = koinViewModel<StatsScreenViewModel>()
                     val state by statsViewModel.statsState.collectAsStateWithLifecycle()
                     StatsScreen(
                         navController = navController,
                         state = state,
-                        actions =  statsViewModel.statsActions,
+                        actions = statsViewModel.statsActions,
                     )
                 }
                 composable<CorsaRoute.FollowScreen> {
@@ -149,7 +171,7 @@ fun CorsaNavGraph(
                         actions = runDetailViewModel.runDetailActions
                     )
                 }
-                composable<CorsaRoute.SharedRunScreen> {
+                composable<SharedRunScreen> {
                     val runDetailViewModel = koinViewModel<RunDetailViewModel>()
                     val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
                     RunDetailScreen(
@@ -167,6 +189,15 @@ fun CorsaNavGraph(
                     val friendsVM = koinViewModel<FollowingViewModel>()
                     val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
                     AddFollowScreen(navController, searchState, friendsVM.followAction)
+                }
+                composable<CorsaRoute.PasswordResetScreen> {
+                    val resetPasswordViewModel = koinViewModel<ResetPasswordViewModel>()
+                    val state by resetPasswordViewModel.resetPasswordState.collectAsStateWithLifecycle()
+                    ResetPasswordScreen(
+                        navController,
+                        state,
+                        resetPasswordViewModel.resetPasswordActions
+                    )
                 }
             }
         }

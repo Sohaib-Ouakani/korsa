@@ -142,7 +142,7 @@ private fun BackTopBarWithShareRun(
                     type = "text/plain"
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Check out my run on Corsa! $shareUrl"
+                        shareUrl
                     )
                 }
                 context.startActivity(

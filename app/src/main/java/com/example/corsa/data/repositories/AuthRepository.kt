@@ -1,13 +1,15 @@
 package com.example.corsa.data.repositories
 
 
-import android.util.Log
+import android.content.Intent
 import com.example.corsa.data.model.Profile
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.user.UserSession
 
 interface AuthRepository {
     suspend fun login(email: String, password: String)
@@ -15,7 +17,14 @@ interface AuthRepository {
     suspend fun logout()
     suspend fun getEmail(): String
     suspend fun updatePassword(oldPassword: String, newPassword: String)
+    suspend fun resetPassword(newPassword: String)
     fun isEmailUser(): Boolean
+    suspend fun resetPasswordForEmail(emailToWriteTo: String)
+    fun handleDeeplinks(
+        intent: Intent,
+        onSessionSuccess: (UserSession) -> Unit,
+        onError: (Throwable) -> Unit
+    )
     val sessionStatus: Flow<SessionStatus>
 }
 
@@ -72,11 +81,38 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun resetPassword(newPassword: String) {
+        supabase.auth.currentUserOrNull() ?: error("User not authenticated")
+
+        supabase.auth.updateUser {
+            password = newPassword
+        }
+    }
+
     override fun isEmailUser(): Boolean {
         val identities = supabase.auth.currentUserOrNull()?.identities
             ?: return false
 
         return identities.any { it.provider == "email" }
+    }
+
+    override suspend fun resetPasswordForEmail(emailToWriteTo: String) {
+        supabase.auth.resetPasswordForEmail(
+            emailToWriteTo,
+            "corsa://reset-password"
+        )
+    }
+
+    override fun handleDeeplinks(
+        intent: Intent,
+        onSessionSuccess: (UserSession) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        supabase.handleDeeplinks(
+            intent,
+            onSessionSuccess,
+            onError
+        )
     }
 
     private fun requireEmailProvider() {

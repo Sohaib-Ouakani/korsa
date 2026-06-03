@@ -20,36 +20,44 @@ import androidx.navigation.NavController
 import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
-import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
-import io.github.jan.supabase.compose.auth.composeAuth
 import org.koin.compose.koinInject
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    state: AuthState,
-    authActions: AuthActions
+    state: LoginState,
+    actions: LoginActions
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    val supabase = koinInject<SupabaseClient>() // This is needed here for the composable
-
-    val googleAuthState = supabase.composeAuth.rememberSignInWithGoogle()
+    val composeAuth = koinInject<ComposeAuth>()
+    val googleAuthState = composeAuth.rememberSignInWithGoogle()
 
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(state) {
-        when(state.error) {
+    LaunchedEffect(state.error) {
+        when (state.error) {
             is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
 
+    if (state.showResetDialog) {
+        PasswordResetDialog(
+            onDismiss = { actions.onShowResetDialog(false) },
+            onConfirm = { resetEmail ->
+                actions.resetPasswordForEmail(resetEmail)
+                actions.onShowResetDialog(false)
+            }
+        )
+    }
+
     Scaffold(
-        topBar = { LoginScreenTopBar(onBack = { navController.popBackStack() }) },
+        topBar = {
+            LoginScreenTopBar(onBack = {
+                navController.popBackStack()
+                actions.clearError()
+            })
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { contentPadding ->
         Column(
@@ -67,23 +75,79 @@ fun LoginScreen(
                     .padding(bottom = Spacing.xl),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                EmailField(email = email, onEmailChange = { email = it })
+                EmailField(email = state.email, onEmailChange = actions.onEmailChange)
                 PasswordField(
-                    password = password,
-                    onPasswordChange = { password = it },
-                    passwordVisible = passwordVisible,
-                    onToggleVisibility = { passwordVisible = !passwordVisible }
+                    password = state.password,
+                    onPasswordChange = actions.onPasswordChange,
+                    passwordVisible = state.passwordVisible,
+                    onToggleVisibility = actions.onTogglePasswordVisibility
                 )
+                ForgotPasswordButton(onClick = { actions.onShowResetDialog(true) })
                 LoginDivider()
                 GoogleButton(
                     onClick = { googleAuthState.startFlow() },
                     enabled = !state.isLoading
                 )
                 LoginButton(
-                    onClick = { authActions.loginWithEmail(email, password) },
+                    onClick = actions.loginWithEmail,
                     isLoading = state.isLoading
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PasswordResetDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var resetEmail by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reimposta password") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text(
+                    text = "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = resetEmail,
+                    onValueChange = { resetEmail = it },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(resetEmail) },
+                enabled = resetEmail.isNotBlank()
+            ) {
+                Text("Invia")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
+}
+
+@Composable
+private fun ForgotPasswordButton(onClick: () -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
+            Text(
+                text = "Password dimenticata?",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
