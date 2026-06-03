@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.corsa.DeepLink
 import com.example.corsa.ui.CorsaRoute.*
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.AppSessionStatus
@@ -59,16 +60,17 @@ sealed interface CorsaRoute {
 @Composable
 fun CorsaNavGraph(
     navController: NavHostController,
-    deepLinkUri: String? = null
+    deepLink: DeepLink? = null
 ) {
     val sessionViewModel = koinViewModel<SessionViewModel>()
     val appSessionStatus by sessionViewModel.appSessionStatus.collectAsStateWithLifecycle()
 
-    var pendingShareToken by remember(deepLinkUri) {
+    var pendingShareToken by remember(deepLink) {
         mutableStateOf(
-            deepLinkUri?.toUri()
-                ?.takeIf { it.scheme == "corsa" && it.host == "run" }
-                ?.lastPathSegment
+            when(deepLink) {
+                is DeepLink.SharedRun -> deepLink.shareToken
+                null -> null
+            }
         )
     }
 

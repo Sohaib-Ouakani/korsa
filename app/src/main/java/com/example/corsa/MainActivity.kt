@@ -1,6 +1,9 @@
 package com.example.corsa
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,18 +18,48 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             CorsaTheme {
                 val navController = rememberNavController()
 
-                val supabase = koinInject<SupabaseClient>()
-                supabase.handleDeeplinks(intent)
+                val appIntentResolver = koinInject<AppIntentResolver>()
 
                 CorsaNavGraph(
                     navController = navController,
-                    deepLinkUri = intent?.data?.toString()
+                    deepLink = appIntentResolver.resolve(intent)
                 )
             }
         }
+    }
+}
+
+sealed class DeepLink {
+    data class SharedRun(val shareToken: String) : DeepLink()
+
+    companion object {
+        fun resolve(uri: Uri?): DeepLink? {
+            uri ?: return null
+            if (uri.scheme != "corsa") return null
+
+            return when (uri.host) {
+                "run" -> uri.lastPathSegment?.let { SharedRun(it) }
+                else -> null
+            }
+        }
+    }
+}
+
+class AppIntentResolver(
+    private val supabase: SupabaseClient
+) {
+
+    fun resolve(intent: Intent): DeepLink? {
+        supabase.handleDeeplinks(
+            intent,
+            onError = { Log.e("AppIntentResolver", "Error on handling intent")}
+        )
+
+        return DeepLink.resolve(intent.data)
     }
 }

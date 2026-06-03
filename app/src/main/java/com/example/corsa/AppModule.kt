@@ -58,6 +58,8 @@ val appModule = module {
         }
     }
 
+    single<AppIntentResolver> { AppIntentResolver(get()) }
+
     single<ProfilesRepository> { ProfilesRepositoryImpl(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<RunsRepository> { RunsRepositoryImpl(get(), get()) }
