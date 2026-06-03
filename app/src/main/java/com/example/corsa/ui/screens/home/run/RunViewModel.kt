@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.Clock
@@ -53,7 +52,7 @@ sealed class SaveState {
     data object Saving : SaveState()
     data object Success : SaveState()
     data class Error(val message: String) : SaveState()
-    data class Validation(val message: String) : SaveState()
+    data class ValidationError(val message: String) : SaveState()
 }
 
 data class RunState(
@@ -122,7 +121,7 @@ class RunViewModel(
         loadProfile()
         startAndBindService()
     }
-    
+
     private fun loadProfile() {
         viewModelScope.launch {
             try {
@@ -156,7 +155,7 @@ class RunViewModel(
         val (sw, run) = svc.stopAndSnapshot()
 
         if (sw.elapsedTime <= MIN_RUN_DURATION_MS) {
-            _saveState.value = SaveState.Validation("Run too brief to save")
+            _saveState.value = SaveState.ValidationError("Run too brief to save")
             return
         }
         finishRun(sw, run)
@@ -168,7 +167,7 @@ class RunViewModel(
             return
         }
         if (run.points.size < 2) {
-            _saveState.value = SaveState.Validation("Run too short to save")
+            _saveState.value = SaveState.ValidationError("Run too short to save")
             return
         }
         val pace = calculatePace(sw.elapsedTime, run.distanceMeters)

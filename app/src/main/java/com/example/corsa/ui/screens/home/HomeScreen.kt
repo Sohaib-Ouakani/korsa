@@ -93,13 +93,10 @@ private fun Content(
         ) {
             Spacer(Modifier.height(Spacing.md))
 
-            // ── Location label ───────────────────────────────────────────────
-            // TODO: we can add new label to display other stats, like meteo
             LocationLabel(cs, state.locationInfo)
 
             Spacer(Modifier.height(Spacing.md))
 
-            // ── Hero headline ────────────────────────────────────────────────
             Text(
                 text = "READY TO\nMOVE?",
                 modifier = Modifier
@@ -112,19 +109,16 @@ private fun Content(
 
             Spacer(Modifier.height(Spacing.xxl))
 
-            // ── START button ─────────────────────────────────────────────────
             StartButton(cs) { navController.navigate(CorsaRoute.RunScreen) }
 
             Spacer(Modifier.height(Spacing.xxl))
 
-            // ── Goal card ────────────────────────────────────────────────────
             GoalCard(
                 cs,
                 state.goalKm,
                 state.currentKm,
                 state.progress
             )
-            // TODO: we can add new cards to display other stats, like meteo
         }
     }
 }
@@ -306,16 +300,3 @@ private fun PermissionDeniedScreen() {
         }
     }
 }
-
-//@Preview(
-//    name = "STRIDE Home – Dark",
-//    showBackground = true,
-//    backgroundColor = 0xFF1A1A1A,
-//    device = "spec:width=390dp,height=844dp,dpi=420",
-//)
-//@Composable
-//fun StrideHomeScreenPreview() {
-//    CorsaTheme(darkTheme = true, dynamicColor = false) {
-//        HomeScreen()
-//    }
-//}
