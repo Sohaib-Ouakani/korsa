@@ -51,7 +51,7 @@ fun StopWatchScreen(
     LaunchedEffect(saveState) {
         when (saveState) {
             is SaveState.Success -> navController.navigate(CorsaRoute.Home)
-            is SaveState.Validation -> navController.navigate(CorsaRoute.Home)
+            is SaveState.ValidationError -> navController.navigate(CorsaRoute.Home)
             is SaveState.Error -> {
                 snackbarHostState.showSnackbar(saveState.message)
                 navController.navigate(CorsaRoute.Home)

@@ -48,11 +48,11 @@ data class StopWatchState(
 }
 
 sealed class SaveState {
-    object Idle : SaveState()
-    object Saving : SaveState()
-    object Success : SaveState()
+    data object Idle : SaveState()
+    data object Saving : SaveState()
+    data object Success : SaveState()
     data class Error(val message: String) : SaveState()
-    data class Validation(val message: String) : SaveState()
+    data class ValidationError(val message: String) : SaveState()
 }
 
 data class RunState(
@@ -107,21 +107,30 @@ class RunViewModel(
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     private val _runState = MutableStateFlow(RunState())
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    private var _profile: Profile? = null
+    private val _profile = MutableStateFlow<Profile?>(null)
 
 
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState
     ) { sw, run, save ->
-        val pace = if (run.distanceMeters > 0)
-            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
-        else 0
+        val pace = calculatePace(sw.elapsedTime, run.distanceMeters)
         RunUiState(sw, run.copy(currentPaceSecPerKm = pace), save)
     }.stateIn(viewModelScope, SharingStarted.Lazily, RunUiState())
 
     init {
         loadProfile()
         startAndBindService()
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            try {
+                _profile.value = profilesRepository.getMyProfile()
+            }
+            catch (e: Exception) {
+                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
+            }
+        }
     }
 
     private fun startAndBindService() {
@@ -146,24 +155,22 @@ class RunViewModel(
         val (sw, run) = svc.stopAndSnapshot()
 
         if (sw.elapsedTime <= MIN_RUN_DURATION_MS) {
-            _saveState.value = SaveState.Validation("Run too brief to save")
+            _saveState.value = SaveState.ValidationError("Run too brief to save")
             return
         }
         finishRun(sw, run)
     }
 
     private fun finishRun(sw: StopWatchState, run: RunState) {
-        val userId = _profile?.id ?: run {
+        val userId = _profile.value?.id ?: run {
             _saveState.value = SaveState.Error("Profile not loaded, run not saved")
             return
         }
         if (run.points.size < 2) {
-            _saveState.value = SaveState.Validation("Run too short to save")
+            _saveState.value = SaveState.ValidationError("Run too short to save")
             return
         }
-        val pace = if (run.distanceMeters > 0)
-            (sw.elapsedTime / 1000f / (run.distanceMeters / 1000f)).toInt()
-        else 0
+        val pace = calculatePace(sw.elapsedTime, run.distanceMeters)
         val endMs = Clock.System.now().toEpochMilliseconds()
         viewModelScope.launch { saveNewRun(userId, run.copy(currentPaceSecPerKm = pace), endMs) }
     }
@@ -189,19 +196,13 @@ class RunViewModel(
         }
     }
 
-    private fun loadProfile() {
-        viewModelScope.launch {
-            try { _profile = profilesRepository.getMyProfile() }
-            catch (e: Exception) {
-                _saveState.value = SaveState.Error(e.message ?: "Failed to load profile")
-            }
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         appContext.unbindService(connection)
         // intentionally NOT calling stopService here —
         // if the user backgrounds the app mid-run the service keeps going
     }
+
+    private fun calculatePace(elapsedMs: Long, distanceMeters: Float): Int =
+        if (distanceMeters > 0) (elapsedMs / 1000f / (distanceMeters / 1000f)).toInt() else 0
 }

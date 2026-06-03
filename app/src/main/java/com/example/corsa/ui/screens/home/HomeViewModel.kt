@@ -3,7 +3,6 @@ package com.example.corsa.ui.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.location.LocationProvider
-import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
 import com.example.corsa.utils.WeatherCondition
@@ -11,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -23,22 +21,34 @@ data class LocationInfo(
     val weatherCode: WeatherCondition = WeatherCondition.UNKNOWN
 )
 data class HomeState(
-    val goalKm: Float,
-    val currentKm: Float,
-    val progress: Float,
+    val goalKm: Float = 0f,
+    val currentKm: Float = 0f,
+    val progress: Float = 0f,
     val locationInfo: LocationInfo = LocationInfo(),
     val myProfileUrl: String? = null,
-    val appError: AppError = AppError.Absent
+    val appError: AppError = AppError.Absent,
+    val isLoading: Boolean
 )
+
+sealed class ApiEndpoint {
+    abstract val url: String
+
+    data class ReverseGeocode(val lat: Double, val lon: Double) : ApiEndpoint() {
+        override val url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json"
+    }
+
+    data class WeatherForecast(val lat: Double, val lon: Double) : ApiEndpoint() {
+        override val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+    }
+}
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationProvider: LocationProvider
 ): ViewModel() {
-    private val _profile = MutableStateFlow<Profile?>(null)
-
-    // Derived from profile reactively
-    private val _state = MutableStateFlow<HomeState?>(null)
-    val state: StateFlow<HomeState?> = _state
+    private val _state = MutableStateFlow(HomeState(
+        isLoading = true
+    ))
+    val state: StateFlow<HomeState> = _state
 
     init {
         loadProfile()
@@ -46,29 +56,34 @@ class HomeViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            val loaded = profilesRepository.getMyProfile()
-            val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
-            val goalKm = loaded.level * 10f
+            try {
+                val loaded = profilesRepository.getMyProfile()
+                val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
+                val goalKm = loaded.level * 10f
+                val profileUrl = if(loaded.avatarPath != null) {
+                    profilesRepository.avatarUrl(loaded.avatarPath)
+                } else null
 
-            _profile.value = loaded
-            _state.value = HomeState(
-                goalKm = goalKm,
-                currentKm = weeklyKm,
-                progress = weeklyKm / goalKm,
-                myProfileUrl = if(loaded.avatarPath != null) profilesRepository.avatarUrl(loaded.avatarPath) else null
-            )
-            launch {
-                var locationInfo = LocationInfo()
-                var appError: AppError = AppError.Absent
-                try {
-                    locationInfo = getLocationInfo()
-                } catch (e: Exception) {
-                    appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                _state.updateState(
+                    goalKm = goalKm,
+                    currentKm = weeklyKm,
+                    progress = weeklyKm / goalKm,
+                    myProfileUrl = profileUrl
+                )
+                launch {
+                    var locationInfo = LocationInfo()
+                    var appError: AppError = AppError.Absent
+                    try {
+                        locationInfo = getLocationInfo()
+                    } catch (e: Exception) {
+                        appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                    }
+                    _state.updateState(locationInfo = locationInfo, appError = appError)
                 }
-                _state.update { it?.copy(
-                    locationInfo = locationInfo,
-                    appError = appError
-                ) }
+            } catch (e: Exception) {
+                _state.updateState(appError = AppError.Present(e.message ?: "Failed to load profile"))
+            } finally {
+                _state.updateState(isLoading = false)
             }
         }
     }
@@ -83,7 +98,7 @@ class HomeViewModel(
 
     private suspend fun getCityName(lat: Double, lon: Double): String? {
         return withContext(Dispatchers.IO) {
-            val url = "https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json"
+            val url = ApiEndpoint.ReverseGeocode(lat, lon).url
 
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
@@ -101,12 +116,32 @@ class HomeViewModel(
 
     private suspend fun getWeather(lat: Double, lon: Double): WeatherCondition {
         return withContext(Dispatchers.IO) {
-            val weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+            val weatherUrl = ApiEndpoint.WeatherForecast(lat, lon).url
             val weatherConn = URL(weatherUrl).openConnection() as HttpURLConnection
             val weatherJson = JSONObject(weatherConn.inputStream.bufferedReader().readText())
             val weatherCode = weatherJson.getJSONObject("current").optInt("weather_code")
 
             WeatherCondition.fromWmoCode(weatherCode)
         }
+    }
+
+    private fun MutableStateFlow<HomeState>.updateState(
+        goalKm: Float? = null,
+        currentKm: Float? = null,
+        progress: Float? = null,
+        locationInfo: LocationInfo? = null,
+        myProfileUrl: String? = null,
+        appError: AppError? = null,
+        isLoading: Boolean? = null
+    ) {
+        value = value.copy(
+            goalKm = goalKm ?: value.goalKm,
+            currentKm = currentKm ?: value.currentKm,
+            progress = progress ?: value.progress,
+            locationInfo = locationInfo ?: value.locationInfo,
+            myProfileUrl = myProfileUrl ?: value.myProfileUrl,
+            appError = appError ?: value.appError,
+            isLoading = isLoading ?: value.isLoading
+        )
     }
 }
