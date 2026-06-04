@@ -163,7 +163,7 @@ private fun MainContent(
                         ui.newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
                         ui.newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
                         ui.newPassword != ui.confirmPassword -> showSnackbar("Le password non coincidono")
-                        else -> uiActions.onShowReauthDialogChange(true)
+                        else -> uiActions.onShowReAuthDialogChange(true)
                     }
                 },
                 modifier = Modifier
@@ -176,19 +176,19 @@ private fun MainContent(
 
             Spacer(Modifier.height(Spacing.xs))
 
-            if (ui.showReauthDialog) {
-                ReauthDialog(
+            if (ui.showReAuthDialog) {
+                ReAuthDialog(
                     currentPassword = ui.currentPassword,
                     currentPasswordVisible = ui.currentPasswordVisible,
                     onPasswordChange = uiActions.onCurrentPasswordChange,
                     onToggleVisibility = { uiActions.onCurrentPasswordVisibleChange(!ui.currentPasswordVisible) },
                     onDismiss = {
-                        uiActions.onShowReauthDialogChange(false)
+                        uiActions.onShowReAuthDialogChange(false)
                         uiActions.onCurrentPasswordChange("")
                         uiActions.onCurrentPasswordVisibleChange(false)
                     },
                     onConfirm = {
-                        uiActions.onShowReauthDialogChange(false)
+                        uiActions.onShowReAuthDialogChange(false)
                         actions.saveNewPassword(ui.currentPassword, ui.newPassword)
                         uiActions.onNewPasswordChange("")
                         uiActions.onConfirmPasswordChange("")
@@ -409,7 +409,7 @@ private fun PasswordField(
 }
 
 @Composable
-private fun ReauthDialog(
+private fun ReAuthDialog(
     currentPassword: String,
     currentPasswordVisible: Boolean,
     onPasswordChange: (String) -> Unit,

@@ -21,7 +21,7 @@ data class UIState(
     val confirmPassword: String = "",
     val newPasswordVisible: Boolean = false,
     val confirmPasswordVisible: Boolean = false,
-    val showReauthDialog: Boolean = false,
+    val showReAuthDialog: Boolean = false,
     val currentPassword: String = "",
     val currentPasswordVisible: Boolean = false
 )
@@ -43,7 +43,7 @@ data class OnUIStateChange(
     val onNewPasswordVisibleChange: (Boolean) -> Unit,
     val onConfirmPasswordChange: (String) -> Unit,
     val onConfirmPasswordVisibleChange: (Boolean) -> Unit,
-    val onShowReauthDialogChange: (Boolean) -> Unit,
+    val onShowReAuthDialogChange: (Boolean) -> Unit,
     val onCurrentPasswordChange: (String) -> Unit,
     val onCurrentPasswordVisibleChange: (Boolean) -> Unit,
 )
@@ -78,7 +78,7 @@ class SettingsViewModel(
             onConfirmPasswordChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(confirmPassword = it)) },
             onNewPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(newPasswordVisible = it)) },
             onConfirmPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(confirmPasswordVisible = it)) },
-            onShowReauthDialogChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(showReauthDialog = it)) },
+            onShowReAuthDialogChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(showReAuthDialog = it)) },
             onCurrentPasswordChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(currentPassword = it)) },
             onCurrentPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(currentPasswordVisible = it)) },
         )
