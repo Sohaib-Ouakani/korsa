@@ -32,10 +32,12 @@ import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
+import com.example.corsa.utils.WeatherCondition
 
 @Composable
 fun HomeScreen(
     state: HomeState,
+    homeActions: HomeActions,
     navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
@@ -43,6 +45,9 @@ fun HomeScreen(
     LocationPermissionHandler { permissionState, requestPermission ->
         when (permissionState) {
             LocationPermissionState.GRANTED -> {
+                LaunchedEffect(Unit) {
+                    homeActions.updateLocationLabelData()
+                }
                 Content(cs, navController, state)
             }
 
@@ -177,16 +182,18 @@ private fun LocationLabel(cs: ColorScheme, locationInfo: LocationInfo) {
                 style = MaterialTheme.typography.labelSmall
             )
             Spacer(Modifier.width(Spacing.sm))
-        Icon(
-            imageVector = locationInfo.weatherCode.icon,
-            contentDescription = "Weather",
-            modifier = Modifier.size(Size.s)
-        )
         } else {
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(Size.s),
                 strokeWidth = 1.dp,
+            )
+        }
+        if (locationInfo.weatherCode != WeatherCondition.UNKNOWN) {
+            Icon(
+                imageVector = locationInfo.weatherCode.icon,
+                contentDescription = "Weather",
+                modifier = Modifier.size(Size.s)
             )
         }
     }
