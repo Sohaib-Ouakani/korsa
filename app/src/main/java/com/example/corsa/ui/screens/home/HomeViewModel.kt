@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.cache.LocationCache
@@ -80,12 +81,14 @@ class HomeViewModel(
                             getLocationInfo().also { locationCache.store(it) }
                         } catch (e: Exception) {
                             appError = AppError.Present(e.message ?: "Failed to fetch location info")
+                            Log.e("HomeViewModel", e.message ?: "Failed to fetch location info")
                             LocationInfo()
                         }
                     _state.updateState(locationInfo = locationInfo, appError = appError)
                 }
             } catch (e: Exception) {
                 _state.updateState(appError = AppError.Present(e.message ?: "Failed to load profile"))
+                Log.e("HomeViewModel", e.message ?: "Failed to load profile")
             } finally {
                 _state.updateState(isLoading = false)
             }

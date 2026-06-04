@@ -163,18 +163,24 @@ private fun LocationLabel(cs: ColorScheme, locationInfo: LocationInfo) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (locationInfo.cityName != null){
         Icon(
             imageVector = Icons.Filled.LocationOn,
             contentDescription = "Location",
             modifier = Modifier.size(Size.s)
         )
         Spacer(Modifier.width(Spacing.sm))
-        if (locationInfo.cityName != null){
             Text(
                 text = locationInfo.cityName,
                 color = cs.primary,
                 style = MaterialTheme.typography.labelSmall
             )
+            Spacer(Modifier.width(Spacing.sm))
+        Icon(
+            imageVector = locationInfo.weatherCode.icon,
+            contentDescription = "Weather",
+            modifier = Modifier.size(Size.s)
+        )
         } else {
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary,
@@ -182,12 +188,6 @@ private fun LocationLabel(cs: ColorScheme, locationInfo: LocationInfo) {
                 strokeWidth = 1.dp,
             )
         }
-        Spacer(Modifier.width(Spacing.sm))
-        Icon(
-            imageVector = locationInfo.weatherCode.icon,
-            contentDescription = "Weather",
-            modifier = Modifier.size(Size.s)
-        )
     }
 }
 
