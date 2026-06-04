@@ -136,4 +136,8 @@ dependencies {
 
     //FusedLocation dependency
     implementation(libs.play.services.location)
+
+    //For weekly notification
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences)
 }

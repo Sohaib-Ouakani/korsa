@@ -1,14 +1,21 @@
 package com.example.corsa
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.work.WorkManager
+
 import com.example.corsa.data.location.LocationProvider
 import com.example.corsa.data.remote.LocationInfoRemote
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.AuthRepositoryImpl
+import com.example.corsa.data.repositories.NotificationPreferencesRepository
 import com.example.corsa.data.repositories.RunsRepositoryImpl
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.ProfilesRepositoryImpl
 import com.example.corsa.data.repositories.RunsRepository
+import com.example.corsa.data.repositories.dataStore
 import com.example.corsa.ui.screens.friends.FollowingViewModel
 import com.example.corsa.ui.screens.SessionViewModel
 import com.example.corsa.ui.screens.auth.LoginViewModel
@@ -64,9 +71,12 @@ val appModule = module {
             }
         }
     }
+    single<DataStore<Preferences>> { get<Context>().dataStore }
 
     single<AppIntentResolver> { AppIntentResolver(get()) }
 
+    single { WorkManager.getInstance(get()) }
+    single { NotificationPreferencesRepository(get()) }
     single<ProfilesRepository> { ProfilesRepositoryImpl(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<RunsRepository> { RunsRepositoryImpl(get(), get()) }
@@ -76,7 +86,7 @@ val appModule = module {
     viewModel { SessionViewModel(get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
-    viewModel { SettingsViewModel(get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get()) }
     viewModel { StatsScreenViewModel(get(), get()) }
     viewModel { HomeViewModel(get(), get()) }
     viewModel { RunViewModel(get(), get(), get<Context>().applicationContext) }
