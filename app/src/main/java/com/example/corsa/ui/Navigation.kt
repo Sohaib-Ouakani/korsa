@@ -125,6 +125,7 @@ fun CorsaNavGraph(
                     val state by homeViewModel.state.collectAsStateWithLifecycle()
                     HomeScreen(
                         state,
+                        homeViewModel.homeActions,
                         navController,
                     )
                 }
