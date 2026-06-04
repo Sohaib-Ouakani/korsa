@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BackTopBar
+import com.example.corsa.ui.premissions.NotificationPermission
+import com.example.corsa.ui.premissions.NotificationPermissionHandler
 import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
@@ -209,6 +211,53 @@ private fun MainContent(
         }
 
         Spacer(Modifier.height(Spacing.xl))
+        SectionLabel("NOTIFICHE")
+        Spacer(Modifier.height(Spacing.xs))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                Text(
+                    text = "Sfida settimanale",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Ricevi un promemoria ogni settimana",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            NotificationPermissionHandler { notifState, requestNotification ->
+                var pendingEnable by remember { mutableStateOf(false) }
+
+                LaunchedEffect(notifState) {
+                    if (pendingEnable && notifState == NotificationPermission.GRANTED) {
+                        actions.toggleWeeklyNotification()
+                        pendingEnable = false
+                    }
+                }
+
+                Switch(
+                    checked = state.weeklyNotificationEnabled,
+                    onCheckedChange = { isChecked ->
+                        if (isChecked) {
+                            when (notifState) {
+                                NotificationPermission.GRANTED -> actions.toggleWeeklyNotification()
+                                else -> {
+                                    pendingEnable = true
+                                    requestNotification()
+                                }
+                            }
+                        } else {
+                            actions.toggleWeeklyNotification()
+                        }
+                    },
+                )
+            }
+        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
 

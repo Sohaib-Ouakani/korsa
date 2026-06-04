@@ -1,22 +1,29 @@
 package com.example.corsa.ui.screens.settings
 
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
 import com.example.corsa.data.model.ProfileUpdate
 import com.example.corsa.data.repositories.AuthRepository
+import com.example.corsa.data.repositories.NotificationPreferencesRepository
 import com.example.corsa.data.repositories.ProfilesRepository
+import com.example.corsa.service.notification.WeeklyChallengeScheduler
 import com.example.corsa.utils.AppError
 import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SettingsState(
-    val isLoading: Boolean,
+    val isLoading: Boolean = true,
     val currentUsername: String = "",
     val currentEmail: String = "",
     val isEmailUser: Boolean = false,
     val avatarUrl: String? = null,
+    val weeklyNotificationEnabled: Boolean = false,
     val error: AppError = AppError.Absent,
 )
 
@@ -25,12 +32,15 @@ data class SettingsActions(
     val saveNewUsername: (newUsername: String) -> Unit,
     val saveNewPassword: (oldPassword: String, newPassword: String) -> Unit,
     val uploadAvatar: (imageBytes: ByteArray, mimeType: String) -> Unit,
+    val toggleWeeklyNotification: () -> Unit,
     val clearError: () -> Unit,
 )
 
 class SettingsViewModel(
     private val authRepository: AuthRepository,
-    private val profilesRepository: ProfilesRepository
+    private val profilesRepository: ProfilesRepository,
+    private val notificationPreferencesRepository: NotificationPreferencesRepository,
+    private val workManager: WorkManager
 ) : ViewModel() {
 
     val settingsActions = SettingsActions(
@@ -38,12 +48,11 @@ class SettingsViewModel(
         saveNewUsername = ::saveNewUsername,
         saveNewPassword = ::saveNewPassword,
         uploadAvatar = ::uploadAvatar,
-        clearError = ::clearError
+        clearError = ::clearError,
+        toggleWeeklyNotification = ::toggleWeeklyNotification
     )
 
-    private val _settingsState = MutableStateFlow(SettingsState(
-        isLoading = true,
-    ))
+    private val _settingsState = MutableStateFlow(SettingsState())
     val settingsState = _settingsState.asStateFlow()
 
     init {
@@ -56,6 +65,7 @@ class SettingsViewModel(
                 val profile = profilesRepository.getMyProfile()
                 val email = authRepository.getEmail()
                 val isEmailUser = authRepository.isEmailUser()
+                val weeklyNotificationEnabled = notificationPreferencesRepository.weeklyNotificationEnabled.first()
                 _settingsState.updateState(
                     currentUsername = profile.username,
                     currentEmail = email,
@@ -65,6 +75,7 @@ class SettingsViewModel(
                             profilesRepository.avatarUrl(it) + "?t=${profile.updatedAt}"
                         }
                     ),
+                    weeklyNotificationEnabled = weeklyNotificationEnabled,
                     error = AppError.Absent,
                 )
             } catch (e: Exception) {
@@ -142,6 +153,27 @@ class SettingsViewModel(
         }
     }
 
+    private fun toggleWeeklyNotification() {
+        viewModelScope.launch {
+            _settingsState.updateState(
+                // not updating loading status because visually would result strange
+                error = AppError.Absent,
+            )
+            try {
+                val enabled = _settingsState.value.weeklyNotificationEnabled
+                notificationPreferencesRepository.setWeeklyNotificationEnabled(!enabled)
+                if (enabled) {
+                    WeeklyChallengeScheduler.cancel(workManager)
+                } else {
+                    WeeklyChallengeScheduler.schedule(workManager)
+                }
+                _settingsState.updateState(weeklyNotificationEnabled = !enabled)
+            } catch (e: Exception) {
+                _settingsState.updateState(error = AppError.Present(e.message ?: "Error while updating notification setting"))
+            }
+        }
+    }
+
     private fun clearError() {
         _settingsState.updateState(error = AppError.Absent)
     }
@@ -153,6 +185,7 @@ class SettingsViewModel(
         isEmailUser: Boolean? = null,
         avatarUrl: Option<String> = Option.Absent,
         error: AppError? = null,
+        weeklyNotificationEnabled: Boolean? = null
     ) {
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
@@ -163,6 +196,7 @@ class SettingsViewModel(
                 is Option.Absent -> value.avatarUrl
                 is Option.Present -> avatarUrl.value
             },
+            weeklyNotificationEnabled = weeklyNotificationEnabled ?: value.weeklyNotificationEnabled,
             error = error ?: value.error,
         )
     }

@@ -3,6 +3,7 @@ androidSdk = "13.2.0"
 coilCompose = "2.7.0"
 agp = "8.13.2"
 bom = "3.6.0"
+datastorePreferences = "1.2.1"
 kotlin = "2.3.21"
 coreKtx = "1.18.0"
 junit = "4.13.2"
@@ -19,10 +20,13 @@ lifecycleViewmodelCompose = "2.10.0"
 playServicesLocation = "21.3.0"
 kotlinxCoroutinesPlayServices = "1.10.0"
 koinAndroidxCompose = "4.0.2"
+workRuntimeKtx = "2.11.2"
 
 [libraries]
 android-sdk = { module = "org.maplibre.gl:android-sdk", version.ref = "androidSdk" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 auth-kt = { module = "io.github.jan-tennert.supabase:auth-kt" }
 bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "bom" }
 compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth" }
