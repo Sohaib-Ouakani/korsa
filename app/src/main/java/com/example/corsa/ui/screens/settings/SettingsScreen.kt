@@ -90,23 +90,14 @@ private fun MainContent(
             ?: return@rememberLauncherForActivityResult
         actions.uploadAvatar(bytes, mimeType)
     }
-
-    var newUsername by remember { mutableStateOf("") }
-
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var newPasswordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
-
-    var showReauthDialog by remember { mutableStateOf(false) }
-    var currentPassword by remember { mutableStateOf("") }
-    var currentPasswordVisible by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
 
     val showSnackbar: (String) -> Unit = { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
+
+    val ui = state.uiState
+    val uiActions = actions.updateUIState
 
     Column(
         modifier = Modifier
@@ -121,20 +112,19 @@ private fun MainContent(
         SectionLabel("ACCOUNT")
         Spacer(Modifier.height(Spacing.xs))
 
-        // Avatar section
         Avatar(photoPickerLauncher, state)
 
         Spacer(Modifier.height(Spacing.md))
 
         EditableField(
             currentValue = state.currentUsername,
-            newValue = newUsername,
-            onValueChange = { newUsername = it },
+            newValue = ui.newUsername,
+            onValueChange = uiActions.onNewUsernameChange,
             label = "Username",
             keyboardType = KeyboardType.Text,
             onSave = {
-                actions.saveNewUsername(newUsername)
-                newUsername = ""
+                actions.saveNewUsername(ui.newUsername)
+                uiActions.onNewUsernameChange("")
             },
         )
 
@@ -150,19 +140,19 @@ private fun MainContent(
             Spacer(Modifier.height(Spacing.xs))
 
             PasswordField(
-                value = newPassword,
-                onValueChange = { newPassword = it },
+                value = ui.newPassword,
+                onValueChange = uiActions.onNewPasswordChange,
                 label = "Nuova password",
-                visible = newPasswordVisible,
-                onToggleVisibility = { newPasswordVisible = !newPasswordVisible },
+                visible = ui.newPasswordVisible,
+                onToggleVisibility = { uiActions.onNewPasswordVisibleChange(!ui.newPasswordVisible) },
             )
 
             PasswordField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                value = ui.confirmPassword,
+                onValueChange = uiActions.onConfirmPasswordChange,
                 label = "Conferma password",
-                visible = confirmPasswordVisible,
-                onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible },
+                visible = ui.confirmPasswordVisible,
+                onToggleVisibility = { uiActions.onConfirmPasswordVisibleChange(!ui.confirmPasswordVisible) },
             )
 
             Spacer(Modifier.height(Spacing.xs))
@@ -170,10 +160,10 @@ private fun MainContent(
             Button(
                 onClick = {
                     when {
-                        newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
-                        newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
-                        newPassword != confirmPassword -> showSnackbar("Le password non coincidono")
-                        else -> showReauthDialog = true
+                        ui.newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
+                        ui.newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
+                        ui.newPassword != ui.confirmPassword -> showSnackbar("Le password non coincidono")
+                        else -> uiActions.onShowReauthDialogChange(true)
                     }
                 },
                 modifier = Modifier
@@ -186,25 +176,24 @@ private fun MainContent(
 
             Spacer(Modifier.height(Spacing.xs))
 
-            if (showReauthDialog) {
+            if (ui.showReauthDialog) {
                 ReauthDialog(
-                    currentPassword = currentPassword,
-                    currentPasswordVisible = currentPasswordVisible,
-                    onPasswordChange = { currentPassword = it },
-                    onToggleVisibility = { currentPasswordVisible = !currentPasswordVisible },
+                    currentPassword = ui.currentPassword,
+                    currentPasswordVisible = ui.currentPasswordVisible,
+                    onPasswordChange = uiActions.onCurrentPasswordChange,
+                    onToggleVisibility = { uiActions.onCurrentPasswordVisibleChange(!ui.currentPasswordVisible) },
                     onDismiss = {
-                        showReauthDialog = false
-                        currentPassword = ""
-                        currentPasswordVisible = false
+                        uiActions.onShowReauthDialogChange(false)
+                        uiActions.onCurrentPasswordChange("")
+                        uiActions.onCurrentPasswordVisibleChange(false)
                     },
                     onConfirm = {
-                        showReauthDialog = false
-                        actions.saveNewPassword(currentPassword, newPassword)
-                        // Optimistically clear fields; errors surface via snackbar
-                        newPassword = ""
-                        confirmPassword = ""
-                        currentPassword = ""
-                        currentPasswordVisible = false
+                        uiActions.onShowReauthDialogChange(false)
+                        actions.saveNewPassword(ui.currentPassword, ui.newPassword)
+                        uiActions.onNewPasswordChange("")
+                        uiActions.onConfirmPasswordChange("")
+                        uiActions.onCurrentPasswordChange("")
+                        uiActions.onCurrentPasswordVisibleChange(false)
                     },
                 )
             }

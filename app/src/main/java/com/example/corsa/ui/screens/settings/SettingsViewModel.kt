@@ -1,8 +1,6 @@
 package com.example.corsa.ui.screens.settings
 
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
 import com.example.corsa.data.model.ProfileUpdate
@@ -17,6 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+data class UIState(
+    val newUsername: String = "",
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val newPasswordVisible: Boolean = false,
+    val confirmPasswordVisible: Boolean = false,
+    val showReauthDialog: Boolean = false,
+    val currentPassword: String = "",
+    val currentPasswordVisible: Boolean = false
+)
+
 data class SettingsState(
     val isLoading: Boolean = true,
     val currentUsername: String = "",
@@ -24,7 +33,19 @@ data class SettingsState(
     val isEmailUser: Boolean = false,
     val avatarUrl: String? = null,
     val weeklyNotificationEnabled: Boolean = false,
+    val uiState: UIState = UIState(),
     val error: AppError = AppError.Absent,
+)
+
+data class OnUIStateChange(
+    val onNewUsernameChange: (String) -> Unit,
+    val onNewPasswordChange: (String) -> Unit,
+    val onNewPasswordVisibleChange: (Boolean) -> Unit,
+    val onConfirmPasswordChange: (String) -> Unit,
+    val onConfirmPasswordVisibleChange: (Boolean) -> Unit,
+    val onShowReauthDialogChange: (Boolean) -> Unit,
+    val onCurrentPasswordChange: (String) -> Unit,
+    val onCurrentPasswordVisibleChange: (Boolean) -> Unit,
 )
 
 data class SettingsActions(
@@ -33,6 +54,7 @@ data class SettingsActions(
     val saveNewPassword: (oldPassword: String, newPassword: String) -> Unit,
     val uploadAvatar: (imageBytes: ByteArray, mimeType: String) -> Unit,
     val toggleWeeklyNotification: () -> Unit,
+    val updateUIState: OnUIStateChange,
     val clearError: () -> Unit,
 )
 
@@ -49,7 +71,17 @@ class SettingsViewModel(
         saveNewPassword = ::saveNewPassword,
         uploadAvatar = ::uploadAvatar,
         clearError = ::clearError,
-        toggleWeeklyNotification = ::toggleWeeklyNotification
+        toggleWeeklyNotification = ::toggleWeeklyNotification,
+        updateUIState = OnUIStateChange(
+            onNewUsernameChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(newUsername = it)) },
+            onNewPasswordChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(newPassword = it)) },
+            onConfirmPasswordChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(confirmPassword = it)) },
+            onNewPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(newPasswordVisible = it)) },
+            onConfirmPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(confirmPasswordVisible = it)) },
+            onShowReauthDialogChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(showReauthDialog = it)) },
+            onCurrentPasswordChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(currentPassword = it)) },
+            onCurrentPasswordVisibleChange = { _settingsState.updateState(uiState = _settingsState.value.uiState.copy(currentPasswordVisible = it)) },
+        )
     )
 
     private val _settingsState = MutableStateFlow(SettingsState())
@@ -185,7 +217,8 @@ class SettingsViewModel(
         isEmailUser: Boolean? = null,
         avatarUrl: Option<String> = Option.Absent,
         error: AppError? = null,
-        weeklyNotificationEnabled: Boolean? = null
+        weeklyNotificationEnabled: Boolean? = null,
+        uiState: UIState? = null
     ) {
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
@@ -198,6 +231,7 @@ class SettingsViewModel(
             },
             weeklyNotificationEnabled = weeklyNotificationEnabled ?: value.weeklyNotificationEnabled,
             error = error ?: value.error,
+            uiState = uiState ?: value.uiState
         )
     }
 }
