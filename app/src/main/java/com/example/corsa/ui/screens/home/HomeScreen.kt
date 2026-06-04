@@ -65,7 +65,7 @@ private fun Content(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state) {
-        when(state?.appError) {
+        when(state.appError) {
             is AppError.Present -> {
                 snackbarHostState.showSnackbar(state.appError.message)
             }
