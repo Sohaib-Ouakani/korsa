@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.corsa.data.remote.LocationInfo
 import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar

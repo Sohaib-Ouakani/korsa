@@ -1,8 +1,8 @@
 package com.example.corsa
 
 import android.content.Context
-import com.example.corsa.data.cache.LocationCache
 import com.example.corsa.data.location.LocationProvider
+import com.example.corsa.data.remote.LocationInfoRemote
 import com.example.corsa.data.repositories.AuthRepository
 import com.example.corsa.data.repositories.AuthRepositoryImpl
 import com.example.corsa.data.repositories.RunsRepositoryImpl
@@ -71,16 +71,16 @@ val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<RunsRepository> { RunsRepositoryImpl(get(), get()) }
     single<LocationProvider> { LocationProvider(get()) }
-    single<LocationCache> { LocationCache() }
+    single<LocationInfoRemote>{ LocationInfoRemote(get()) }
 
     viewModel { SessionViewModel(get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { StatsScreenViewModel(get(), get()) }
-    viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get()) }
     viewModel { RunViewModel(get(), get(), get<Context>().applicationContext) }
-    viewModel { FollowingViewModel(get(), get() ) }
+    viewModel { FollowingViewModel(get(), get(),) }
     viewModel { params -> RunDetailViewModel(get(), get(),params.get()) }
     viewModel { ProfileDetailViewModel(get(), get(), get()) }
     viewModel { ResetPasswordViewModel(get()) }
