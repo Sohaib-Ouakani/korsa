@@ -36,7 +36,6 @@ import com.example.corsa.utils.AppError
 @Composable
 fun HomeScreen(
     state: HomeState,
-    actions: HomeActions,
     navController: NavController
 ) {
     val cs = MaterialTheme.colorScheme
@@ -44,9 +43,6 @@ fun HomeScreen(
     LocationPermissionHandler { permissionState, requestPermission ->
         when (permissionState) {
             LocationPermissionState.GRANTED -> {
-                LaunchedEffect(Unit) {
-                    actions.fetchLocationInfo()
-                }
                 Content(cs, navController, state)
             }
 
