@@ -24,15 +24,15 @@ import kotlin.uuid.Uuid
 
 // ── Interface ──────────────────────────────────────────────────────────────
 interface ProfilesRepository {
-    suspend fun getProfileByUserId(userId: String): Profile
+    suspend fun getProfileByUserId(userId: String, cachedValue: Boolean? = true): Profile
     suspend fun getUserEntryByUserId(userId: String): UserEntry
     suspend fun getAllProfiles(): List<Profile>
-    suspend fun getMyProfile(): Profile
+    suspend fun getMyProfile(cachedValue: Boolean? = true): Profile
     suspend fun updateProfile(update: ProfileUpdate): Profile
     suspend fun getMyUserEntry(): UserEntry
-    suspend fun getProfileIFollow(): List<Profile>
+    suspend fun getProfileIFollow(cachedValue: Boolean? = true): List<Profile>
     suspend fun weeklyKmByUserId(userId: String): Float
-    suspend fun getProfilesIDoNotFollow(): List<Profile>
+    suspend fun getProfilesIDoNotFollow(cachedValue: Boolean? = true): List<Profile>
     suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean
     suspend fun AddFollowToAProfileByUserId(userId: String)
     suspend fun StopFollowToAProfileByUserId(userId: String)
@@ -45,14 +45,44 @@ class ProfilesRepositoryImpl(
     private val supabase: SupabaseClient
 ) : ProfilesRepository {
 
-    override suspend fun getProfileByUserId(userId: String): Profile {
-        return supabase.postgrest["profiles"]
-                .select {
-                    filter {
-                        eq("id", userId)
-                    }
+    private val ttlMs = 10 * 60 * 1000L
+    private val _getProfileByUserIdTimeStamp = mutableMapOf<String, Long>()
+    private val _getProfileByUserIdCache = mutableMapOf<String, Profile>()
+    private val _getProfilesIDoNotFollowTimestamp = mutableMapOf<String, Long>()
+    private val _getProfilesIDoNotFollowCache = mutableMapOf<String, List<Profile>>()
+    private val _getProfileIFollowTimestamp = mutableMapOf<String, Long>()
+    private val _getProfileIFollowCache = mutableMapOf<String, List<Profile>>()
+    private var _getMyProfileTimestamp: Long? = null
+    private var _getMyProfileCache: Profile? = null
+
+    private var _wasFollowANewUserNotFriend: Boolean = false
+    private var _wasFollowANewUserFriend: Boolean = false
+
+
+    override suspend fun getProfileByUserId(userId: String, cachedValue: Boolean?): Profile {
+        val cachedProfile = _getProfileByUserIdCache[userId]
+        val timestamp = _getProfileByUserIdTimeStamp[userId]
+
+        if (cachedValue == true &&
+            cachedProfile != null &&
+            timestamp != null &&
+            System.currentTimeMillis() - timestamp < ttlMs
+        ) {
+            return cachedProfile
+        }
+
+        val profile = supabase.postgrest["profiles"]
+            .select {
+                filter {
+                    eq("id", userId)
                 }
-                .decodeSingle<Profile>()
+            }
+            .decodeSingle<Profile>()
+
+        _getProfileByUserIdCache[userId] = profile
+        _getProfileByUserIdTimeStamp[userId] = System.currentTimeMillis()
+
+        return profile
     }
 
     override suspend fun weeklyKmByUserId(userId: String): Float {
@@ -77,8 +107,19 @@ class ProfilesRepositoryImpl(
         return runs.sumOf { it.distanceMeters.toDouble() }.toFloat() / 1000f
     }
 
-    override suspend fun getProfilesIDoNotFollow(): List<Profile> {
+    override suspend fun getProfilesIDoNotFollow(cachedValue: Boolean? ): List<Profile> {
         val currentProfileId = getMyProfile().id
+        val cachedProfiles = _getProfilesIDoNotFollowCache[currentProfileId]
+        val timestamp = _getProfilesIDoNotFollowTimestamp[currentProfileId]
+
+        if (cachedValue == true &&
+                cachedProfiles != null &&
+                timestamp != null &&
+                System.currentTimeMillis() - timestamp < ttlMs &&
+                !_wasFollowANewUserNotFriend
+        ) {
+            return cachedProfiles
+        }
 
         val follows = supabase.postgrest["follows"]
             .select {
@@ -94,34 +135,76 @@ class ProfilesRepositoryImpl(
             .select()
             .decodeList<Profile>()
 
-        return allProfiles.filter { it.id !in excludedIds }
+        val result = allProfiles.filter { it.id !in excludedIds }
+
+        _getProfilesIDoNotFollowCache[currentProfileId] = result
+        _getProfilesIDoNotFollowTimestamp[currentProfileId] = System.currentTimeMillis()
+        _wasFollowANewUserNotFriend = false
+        return result
     }
 
     override suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean {
-        val currentProfileId = getMyProfile().id
+        return getProfileIFollow().map { it.id }.contains(userId)
+    }
+
+
+
+    override suspend fun getProfileIFollow(cachedValue: Boolean?): List<Profile> {
+        val currentUserId = getMyProfile().id
+        val cachedProfiles = _getProfileIFollowCache[currentUserId]
+        val timestamp = _getProfileIFollowTimestamp[currentUserId]
+
+        if (cachedValue == true &&
+            cachedProfiles != null &&
+            timestamp != null &&
+            System.currentTimeMillis() - timestamp < ttlMs &&
+            !_wasFollowANewUserFriend
+        ) {
+            return cachedProfiles
+        }
 
         val follows = supabase.postgrest["follows"]
             .select {
                 filter {
-                    eq("follower_id", currentProfileId)
-                    eq("following_id", userId)
+                    eq("follower_id", currentUserId)
                 }
             }
             .decodeList<Follow>()
 
-        return follows.isNotEmpty()
+        val followingIds = follows.map { it.followingId }
+
+        if (followingIds.isEmpty()) {
+            _getProfileIFollowCache[currentUserId] = emptyList()
+            _getProfileIFollowTimestamp[currentUserId] = System.currentTimeMillis()
+            return emptyList()
+        }
+
+        val result = supabase.postgrest["profiles"]
+            .select {
+                filter {
+                    isIn("id", followingIds)
+                }
+            }
+            .decodeList<Profile>()
+
+        _getProfileIFollowCache[currentUserId] = result
+        _getProfileIFollowTimestamp[currentUserId] = System.currentTimeMillis()
+        _wasFollowANewUserFriend = false
+        return result
     }
 
     override suspend fun AddFollowToAProfileByUserId(userId: String) {
         val currentProfileId = getMyProfile().id
-
+        _wasFollowANewUserFriend = true
+        _wasFollowANewUserNotFriend = true
         supabase.postgrest["follows"]
             .insert(FollowInsert(followerId = currentProfileId, followingId = userId))
     }
 
     override suspend fun StopFollowToAProfileByUserId(userId: String) {
         val currentProfileId = getMyProfile().id
-
+        _wasFollowANewUserFriend = true
+        _wasFollowANewUserNotFriend = true
         supabase.postgrest["follows"]
             .delete {
                 filter {
@@ -158,10 +241,21 @@ class ProfilesRepositoryImpl(
             .decodeList<Profile>()
     }
 
-    override suspend fun getMyProfile(): Profile {
+    override suspend fun getMyProfile(cachedValue: Boolean? ): Profile {
+        val cachedProfile = _getMyProfileCache
+        val timestamp = _getMyProfileTimestamp
+
+        if (cachedValue == true &&
+            cachedProfile != null &&
+            timestamp != null &&
+            System.currentTimeMillis() - timestamp < ttlMs
+        ) {
+            return cachedProfile
+        }
+
         val authUserId = getMyAuthUserId()
 
-        val results = supabase.postgrest["profiles"]
+        val result = supabase.postgrest["profiles"]
             .select {
                 filter {
                     eq("auth_user_id", authUserId)
@@ -169,7 +263,10 @@ class ProfilesRepositoryImpl(
             }
             .decodeSingle<Profile>()
 
-        return results
+        _getMyProfileCache = result
+        _getMyProfileTimestamp = System.currentTimeMillis()
+
+        return result
     }
 
     override suspend fun updateProfile(update: ProfileUpdate): Profile {
@@ -199,30 +296,7 @@ class ProfilesRepositoryImpl(
         )
     }
 
-    override suspend fun getProfileIFollow(): List<Profile> {
-        val currentUserId = getMyProfile().id
 
-        val follows = supabase.postgrest["follows"]
-            .select {
-                filter {
-                    eq("follower_id", currentUserId)
-                }
-            }
-            .decodeList<Follow>()
-
-        val followingIds = follows.map { it.followingId }
-
-        if (followingIds.isEmpty()) return emptyList()
-
-        return supabase.postgrest["profiles"]
-            .select {
-                filter {
-                    isIn("id", followingIds)
-                }
-            }
-            .decodeList<Profile>()
-
-    }
 
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String {

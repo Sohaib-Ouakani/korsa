@@ -46,7 +46,7 @@ data class SearchState(
     val friendsName: List<Profile> = emptyList(),
     val notFriends: List<Profile> = emptyList(),
     val error: AppError = AppError.Absent,
-    val myprofileUrl: String? = null,
+    val myProfileUrl: String? = null,
 )
 
 data class FollowAction(
@@ -79,7 +79,6 @@ class FollowingViewModel(
 
 
     // Cached friends profiles to avoid repeated network calls
-    private var cachedFriendProfiles: List<Profile> = emptyList()
 
     // Holds friends names for the search bar
     private val _searchState = MutableStateFlow(SearchState(isLoading = true))
@@ -97,7 +96,6 @@ class FollowingViewModel(
             try {
             val friends = profilesRepository.getProfileIFollow()
             val notFriends = profilesRepository.getProfilesIDoNotFollow()
-            cachedFriendProfiles = friends
             _searchState.updateSearchState(
                 friendsName = friends,
                 notFriends  = notFriends,
@@ -148,7 +146,7 @@ class FollowingViewModel(
             )
             try {
                 val entries = coroutineScope {
-                    cachedFriendProfiles.map { profile ->
+                    profilesRepository.getProfileIFollow().map { profile ->
                         async {
                             UserRankEntry(
                                 userId      = profile.id,
@@ -185,7 +183,7 @@ class FollowingViewModel(
                 error = AppError.Absent,
             )
             try {
-                val allRuns = cachedFriendProfiles.flatMap { profile ->
+                val allRuns = profilesRepository.getProfileIFollow().flatMap { profile ->
                     runsRepository.getRunsByUserId(profile.id)
                         .map { run ->
                             RunFeedEntry(
@@ -209,12 +207,10 @@ class FollowingViewModel(
     }
 
     fun getAvatarUrl(userId: String): String? {
-        var userImgPath: String? = null
-        cachedFriendProfiles.forEach { profile -> if(profile.id == userId)  userImgPath = profile.avatarPath}
-        if(userImgPath != null){
-            return profilesRepository.avatarUrl(userImgPath)
-        }
-        return null
+        return _searchState.value.friendsName
+            .find { it.id == userId }
+            ?.avatarPath
+            ?.let { profilesRepository.avatarUrl(it) }
     }
 
     private fun MutableStateFlow<FollowState>.updateFollowState(
@@ -243,7 +239,7 @@ class FollowingViewModel(
             isLoading = isLoading ?: value.isLoading,
             friendsName = friendsName ?: value.friendsName,
             notFriends = notFriends?: value.notFriends,
-            myprofileUrl = myprofileUrl?: value.myprofileUrl,
+            myProfileUrl = myprofileUrl?: value.myProfileUrl,
             error = error ?: value.error
         )
 

@@ -3,25 +3,14 @@ package com.example.corsa.ui.screens.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.corsa.data.cache.LocationCache
-import com.example.corsa.data.location.LocationProvider
+import com.example.corsa.data.remote.LocationInfo
+import com.example.corsa.data.remote.LocationInfoRemote
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
-import com.example.corsa.utils.WeatherCondition
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
-data class LocationInfo(
-    val cityName: String? = null,
-    val weatherCode: WeatherCondition = WeatherCondition.UNKNOWN
-)
 data class HomeState(
     val goalKm: Float = 0f,
     val currentKm: Float = 0f,
@@ -32,21 +21,10 @@ data class HomeState(
     val isLoading: Boolean
 )
 
-sealed class ApiEndpoint {
-    abstract val url: String
 
-    data class ReverseGeocode(val lat: Double, val lon: Double) : ApiEndpoint() {
-        override val url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json"
-    }
-
-    data class WeatherForecast(val lat: Double, val lon: Double) : ApiEndpoint() {
-        override val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
-    }
-}
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
-    private val locationProvider: LocationProvider,
-    private val locationCache: LocationCache
+    private val locationInfoRemote: LocationInfoRemote
 ): ViewModel() {
     private val _state = MutableStateFlow(HomeState(
         isLoading = true
@@ -75,10 +53,8 @@ class HomeViewModel(
                 )
                 launch {
                     var appError: AppError = AppError.Absent
-                    val locationInfo = locationCache.locationInfo
-                        ?.takeIf { locationCache.isValid }
-                        ?: try {
-                            getLocationInfo().also { locationCache.store(it) }
+                    val locationInfo = try {
+                           locationInfoRemote.getLocationInfo()
                         } catch (e: Exception) {
                             appError = AppError.Present(e.message ?: "Failed to fetch location info")
                             Log.e("HomeViewModel", e.message ?: "Failed to fetch location info")
@@ -95,42 +71,8 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun getLocationInfo(): LocationInfo{
-        val location = locationProvider.locationFlow(intervalMs = 0L).first()
-        return LocationInfo(
-            cityName = getCityName(location.latitude, location.longitude),
-            weatherCode = getWeather(location.latitude, location.longitude)
-        )
-    }
 
-    private suspend fun getCityName(lat: Double, lon: Double): String? {
-        return withContext(Dispatchers.IO) {
-            val url = ApiEndpoint.ReverseGeocode(lat, lon).url
 
-            val connection = URL(url).openConnection() as HttpURLConnection
-            connection.setRequestProperty("User-Agent", "CorsaApp/1.0")
-
-            val response = connection.inputStream.bufferedReader().readText()
-            val json = JSONObject(response)
-
-            val address = json.getJSONObject("address")
-            address.optString("city")
-                .ifEmpty { address.optString("town") }
-                .ifEmpty { address.optString("village") }
-                .ifEmpty { null }
-        }
-    }
-
-    private suspend fun getWeather(lat: Double, lon: Double): WeatherCondition {
-        return withContext(Dispatchers.IO) {
-            val weatherUrl = ApiEndpoint.WeatherForecast(lat, lon).url
-            val weatherConn = URL(weatherUrl).openConnection() as HttpURLConnection
-            val weatherJson = JSONObject(weatherConn.inputStream.bufferedReader().readText())
-            val weatherCode = weatherJson.getJSONObject("current").optInt("weather_code")
-
-            WeatherCondition.fromWmoCode(weatherCode)
-        }
-    }
 
     private fun MutableStateFlow<HomeState>.updateState(
         goalKm: Float? = null,

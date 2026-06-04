@@ -98,7 +98,7 @@ fun FollowScreen(
         }
     }
     Scaffold(
-        topBar = { TopBar(navController, searchState.myprofileUrl) },
+        topBar = { TopBar(navController, searchState.myProfileUrl) },
         bottomBar = { BottomBar(navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = { FloatingActionButton(
