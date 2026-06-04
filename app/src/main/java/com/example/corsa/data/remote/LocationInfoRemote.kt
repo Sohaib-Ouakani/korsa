@@ -39,15 +39,28 @@ class LocationInfoRemote(
     val isValid get() = locationInfo != null &&
             System.currentTimeMillis() - timestamp < ttlMs
 
-     suspend fun getLocationInfo(): LocationInfo{
-         if(!isValid) {
-             val location = locationProvider.locationFlow(intervalMs = 0L).first()
-             locationInfo = LocationInfo(
-                 cityName = getCityName(location.latitude, location.longitude),
-                 weatherCode = getWeather(location.latitude, location.longitude)
-             )
-             timestamp = System.currentTimeMillis()
-         }
+    suspend fun getLocationInfo(): LocationInfo {
+        if (!isValid) {
+            val location = locationProvider.locationFlow(intervalMs = 0L).first()
+
+            val cityName = try {
+                getCityName(location.latitude, location.longitude)
+            } catch (e: Exception) {
+                null
+            }
+
+            val weatherCode = try {
+                getWeather(location.latitude, location.longitude)
+            } catch (e: Exception) {
+                WeatherCondition.UNKNOWN
+            }
+
+            locationInfo = LocationInfo(
+                cityName = cityName,
+                weatherCode = weatherCode
+            )
+            timestamp = System.currentTimeMillis()
+        }
         return locationInfo!!
     }
     suspend fun getCityName(lat: Double, lon: Double): String? {
