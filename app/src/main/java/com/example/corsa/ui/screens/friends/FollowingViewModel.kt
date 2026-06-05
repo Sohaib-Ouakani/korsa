@@ -74,14 +74,9 @@ class FollowingViewModel(
         getAvatarUrl = ::getAvatarUrl
     )
 
+    private var myProfile: Profile? = null
     private val _followState = MutableStateFlow(FollowState(isLoading = true))
     val followState = _followState.asStateFlow()
-
-
-
-    // Cached friends profiles to avoid repeated network calls
-
-    // Holds friends names for the search bar
     private val _searchState = MutableStateFlow(SearchState(isLoading = true))
     val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
 
@@ -146,8 +141,9 @@ class FollowingViewModel(
                 error = AppError.Absent
             )
             try {
-                val entries = coroutineScope {
-                    profilesRepository.getProfileIFollow().map { profile ->
+                var entries: List<UserRankEntry> = coroutineScope {
+                    profilesRepository.getProfileIFollow()
+                        .plus(profilesRepository.getMyProfile()).map { profile ->
                         async {
                             UserRankEntry(
                                 userId      = profile.id,
@@ -163,6 +159,7 @@ class FollowingViewModel(
                     SortBy.Kilometers -> entries.sortedByDescending { it.weekKm }
                     SortBy.Level      -> entries.sortedByDescending { it.level }
                 })
+                myProfile = profilesRepository.getMyProfile()
             } catch (e: Exception) {
                 _followState.updateFollowState(error = AppError.Present(e.message ?: "Error loading rank"))
             } finally {
@@ -208,7 +205,8 @@ class FollowingViewModel(
     }
 
     fun getAvatarUrl(userId: String): String? {
-        return _searchState.value.friendsName
+        val allProfiles = _searchState.value.friendsName + listOfNotNull(myProfile)
+        return allProfiles
             .find { it.id == userId }
             ?.avatarPath
             ?.let { profilesRepository.avatarUrl(it) }

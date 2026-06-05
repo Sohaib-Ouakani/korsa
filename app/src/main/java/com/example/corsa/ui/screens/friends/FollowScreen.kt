@@ -1,6 +1,5 @@
 package com.example.corsa.ui.screens.friends
 
-import android.util.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +12,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -509,7 +506,6 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
                     color      = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            // Sostituisci Box con AsyncImage (Coil) quando hai le foto reali
             var avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
