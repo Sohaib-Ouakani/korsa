@@ -37,6 +37,7 @@ interface ProfilesRepository {
     suspend fun AddFollowToAProfileByUserId(userId: String)
     suspend fun StopFollowToAProfileByUserId(userId: String)
     suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String
+    suspend fun increaseChallengeNumber()
     fun avatarUrl(path: String): String
 }
 
@@ -319,6 +320,12 @@ class ProfilesRepositoryImpl(
 
         updateProfile(ProfileUpdate(avatarPath = path))
         return path
+    }
+
+    override suspend fun increaseChallengeNumber() {
+        val currentProfile = getMyProfile(cachedValue = false)
+        updateProfile(ProfileUpdate(completedChallenges = currentProfile.completedChallenges + 1))
+        _getMyProfileCache = null
     }
 
     override fun avatarUrl(path: String): String =
