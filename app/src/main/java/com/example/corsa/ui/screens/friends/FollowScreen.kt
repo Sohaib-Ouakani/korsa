@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.friends
 
+import android.util.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -43,6 +47,7 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +72,7 @@ import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
+import com.example.corsa.utils.toFeedDateString
 
 enum class StatsTab(val label: String) {
     Rank("Classifica"),
@@ -108,13 +114,14 @@ fun FollowScreen(
             Icon(Icons.Default.PersonAdd, "Add Friends")
         } }
     ) { contentPadding ->
-        Column(modifier = Modifier.padding(contentPadding)) {
-            // ── first Space  ────────────────────────────────────────────────
-
+        Column(
+            modifier = Modifier
+            .padding(contentPadding)
+        ) {
             Spacer(Modifier.height(16.dp))
-            // ── Search bar  ────────────────────────────────────────────────
-            //TODO
-            FriendSearchBar(searchState, navController)
+
+            FriendSearchBar(searchState, navController, action)
+
             // ── Primary Row  ────────────────────────────────────────────────
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
                 tabs.forEach { tab ->
@@ -210,7 +217,7 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             // Avatar
-            var avatarUrl = action.getAvatarUrl(entry.userId)
+            val avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
                     .size(40.dp)
@@ -239,7 +246,7 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
                     style      = MaterialTheme.typography.labelLarge,
                 )
                 Text(
-                    text  = formatFeedDate(entry.startTime),
+                    text  = entry.startTime.toFeedDateString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -263,7 +270,7 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
 // ── Searchbar part  ────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendSearchBar(searchState: SearchState, navController: NavController) {
+fun FriendSearchBar(searchState: SearchState, navController: NavController, action: FollowAction) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val allFriends = searchState.friendsName
@@ -317,6 +324,7 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp)
             .clip(searchBarShape)
     ) {
         Column(
@@ -335,7 +343,7 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController) {
                             query = friend.username
                             navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
                             expanded = false
-                        }
+                        },
                     )
                 }
             } else if (query.isNotBlank()) {
@@ -350,11 +358,38 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController) {
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ),
                     leadingContent = {
-                        Icon(
-                            imageVector = Icons.Default.SearchOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val avatarUrl = friend.avatarPath?.let {
+                                action.buildAvatarUrl(it)
+                            }
+                            if (avatarUrl != null) {
+                                AsyncImage(
+                                    model = avatarUrl,
+                                    contentDescription = "${friend.username}'s avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
                     },
                     modifier = Modifier.clickable {
                         expanded = false
@@ -364,18 +399,6 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController) {
         }
     }
 }
-// ── Helper per formattare la data ─────────────────────────────────────────────
-fun formatFeedDate(isoString: String): String {
-    return try {
-        val dt        = java.time.OffsetDateTime.parse(isoString)
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy · HH:mm", java.util.Locale.getDefault())
-        dt.format(formatter) // es. "26 mag 2026 · 10:30"
-    } catch (e: Exception) {
-        isoString
-    }
-}
-
-
 // ── Rank part  ────────────────────────────────────────────────
 
 enum class RankTab(val label: String) {

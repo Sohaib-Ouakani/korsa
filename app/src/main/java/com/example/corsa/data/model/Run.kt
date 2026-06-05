@@ -1,5 +1,8 @@
 package com.example.corsa.data.model
 
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -30,7 +33,13 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     val previewPath: String? = null,
     @SerialName("share_token")
     val shareToken: String? = null,
-)
+) {
+    val startTimeLocal: LocalDateTime
+        get() = startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+
+    val endTimeLocal: LocalDateTime
+        get() = endTime.toLocalDateTime(TimeZone.currentSystemDefault())
+}
 
 @Serializable
 data class RunInsert(

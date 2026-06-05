@@ -17,8 +17,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlin.String
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -324,8 +327,26 @@ class ProfilesRepositoryImpl(
 
     override suspend fun increaseChallengeNumber() {
         val currentProfile = getMyProfile(cachedValue = false)
-        updateProfile(ProfileUpdate(completedChallenges = currentProfile.completedChallenges + 1))
-        _getMyProfileCache = null
+
+        if (!currentProfile.completedChallengesUpdatedAt.isInCurrentWeek()) {
+            updateProfile(ProfileUpdate(completedChallenges = currentProfile.completedChallenges + 1))
+            _getMyProfileCache = null
+        }
+    }
+
+    fun Instant?.isInCurrentWeek(): Boolean {
+        if (this == null) return false
+
+        val now = Clock.System.now()
+        val timeZone = TimeZone.currentSystemDefault()
+
+        val todayDate = now.toLocalDateTime(timeZone).date
+        val thisDate = this.toLocalDateTime(timeZone).date
+
+        // Find the Monday of the current week
+        val startOfWeek = todayDate.minus(todayDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
+
+        return thisDate in startOfWeek..todayDate
     }
 
     override fun avatarUrl(path: String): String =

@@ -52,6 +52,8 @@ fun AddFollowScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .navigationBarsPadding()
+                .imePadding()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
@@ -65,7 +67,6 @@ fun AddFollowScreen(
     }
 }
 
-// ── Search bar component ──────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(searchState: SearchState,

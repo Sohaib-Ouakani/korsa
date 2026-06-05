@@ -253,7 +253,7 @@ class RunsRepositoryImpl(
             .from("comments")
             .select(Columns.raw("*, profiles!comments_author_id_fkey(id, username, avatar_path)")) {
                 filter { eq("run_id", id) }
-                order("created_at", Order.ASCENDING)
+                order("created_at", Order.DESCENDING)
             }
             .decodeList<CommentWithProfile>()
             .map { it.toCommentEntry() }
@@ -382,8 +382,8 @@ private data class CommentWithProfile(
         commentId = id,
         runId = runId,
         commentContent = content,
-        commentCreatedAt = createdAt,
-        commentUpdatedAt = updatedAt,
+        commentCreatedAt = createdAt.toLocalDateTime(TimeZone.currentSystemDefault()),
+        commentUpdatedAt = updatedAt.toLocalDateTime(TimeZone.currentSystemDefault()),
         authorId = profiles.id,
         authorUsername = profiles.username,
         authorAvatarPath = profiles.avatarPath,

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
 
 
 data class UserRankEntry(
@@ -28,7 +29,7 @@ data class RunFeedEntry(
     val userId: String,
     val displayName: String,
     val avatarUrl: String?,
-    val startTime: String,
+    val startTime: LocalDateTime,
     val pathUrl: String?,
     val distance: Double
 )
@@ -191,7 +192,7 @@ class FollowingViewModel(
                                 userId      = profile.id,
                                 displayName = profile.username,
                                 avatarUrl   = profile.avatarPath,
-                                startTime   = run.startTime.toString(),
+                                startTime   = run.startTimeLocal,
                                 pathUrl     = run.previewPath,
                                 distance    = run.distanceMeters.toDouble() / 1000.0,
                             )
