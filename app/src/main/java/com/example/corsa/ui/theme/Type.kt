@@ -39,6 +39,11 @@ val Typography = Typography(
         fontSize = 15.sp,
         lineHeight = 58.sp,
     ),
+    labelMedium = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 15.sp,
+        letterSpacing = 1.sp,
+    ),
     labelLarge = TextStyle( //automatically applied to Buttons like composables
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
