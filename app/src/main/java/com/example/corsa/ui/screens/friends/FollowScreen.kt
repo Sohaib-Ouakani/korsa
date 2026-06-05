@@ -275,7 +275,7 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController, acti
     var expanded by rememberSaveable { mutableStateOf(false) }
     val allFriends = searchState.friendsName
     val filteredFriends = if (query.isBlank()) {
-        emptyList()
+        allFriends
     } else {
         allFriends.filter { it.username.contains(query, ignoreCase = true) }
     }
@@ -344,6 +344,40 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController, acti
                             navController.navigate(CorsaRoute.ProfileDetailScreen(friend.id))
                             expanded = false
                         },
+                        leadingContent = {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val avatarUrl = friend.avatarPath?.let {
+                                    action.buildAvatarUrl(it)
+                                }
+                                if (avatarUrl != null) {
+                                    AsyncImage(
+                                        model = avatarUrl,
+                                        contentDescription = "${friend.username}'s avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Surface(
+                                        modifier = Modifier.fillMaxSize(),
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .fillMaxSize(),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     )
                 }
             } else if (query.isNotBlank()) {
@@ -358,38 +392,11 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController, acti
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ),
                     leadingContent = {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val avatarUrl = friend.avatarPath?.let {
-                                action.buildAvatarUrl(it)
-                            }
-                            if (avatarUrl != null) {
-                                AsyncImage(
-                                    model = avatarUrl,
-                                    contentDescription = "${friend.username}'s avatar",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = MaterialTheme.colorScheme.primaryContainer
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                        }
+                        Icon(
+                            imageVector = Icons.Default.SearchOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     },
                     modifier = Modifier.clickable {
                         expanded = false
