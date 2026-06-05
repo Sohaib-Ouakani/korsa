@@ -275,7 +275,7 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController, acti
     var expanded by rememberSaveable { mutableStateOf(false) }
     val allFriends = searchState.friendsName
     val filteredFriends = if (query.isBlank()) {
-        emptyList()
+        allFriends
     } else {
         allFriends.filter { it.username.contains(query, ignoreCase = true) }
     }
