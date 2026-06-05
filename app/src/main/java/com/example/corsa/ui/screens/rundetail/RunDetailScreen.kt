@@ -32,6 +32,8 @@ import com.example.corsa.utils.formatPace
 import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -185,6 +187,8 @@ fun RunDetailMap(
         }
     }
 
+    val overlayColor = MaterialTheme.colorScheme.primary.toArgb()
+
     AndroidView(
         // ── factory: runs ONCE — set up style, source, layer, camera here ──
         factory = { _ ->
@@ -204,7 +208,7 @@ fun RunDetailMap(
                         style.addLayer(
                             LineLayer(ROUTE_LAYER_ID, ROUTE_SOURCE_ID)
                                 .withProperties(
-                                    PropertyFactory.lineColor(ROUTE_COLOR.toColorInt()),
+                                    PropertyFactory.lineColor(overlayColor),
                                     PropertyFactory.lineWidth(ROUTE_WIDTH),
                                     PropertyFactory.lineCap("round"),
                                     PropertyFactory.lineJoin("round")
