@@ -1,5 +1,6 @@
 package com.example.corsa.ui.screens.home.run
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -91,6 +92,7 @@ class RunViewModel(
         private const val MIN_RUN_DURATION_MS = 10_000L
     }
 
+    @SuppressLint("StaticFieldLeak")
     private var service: RunTrackingService? = null
 
     private val connection = object : ServiceConnection {

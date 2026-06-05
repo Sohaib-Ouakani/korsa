@@ -12,6 +12,7 @@ import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.JsonNull
 import kotlin.time.Instant
 
@@ -19,8 +20,8 @@ data class CommentEntry(
     val commentId: String,
     val runId: String,
     val commentContent: String,
-    val commentCreatedAt: Instant,
-    val commentUpdatedAt: Instant,
+    val commentCreatedAt: LocalDateTime,
+    val commentUpdatedAt: LocalDateTime,
     val authorId: String,
     val authorUsername: String,
     val authorAvatarPath: String? = null,

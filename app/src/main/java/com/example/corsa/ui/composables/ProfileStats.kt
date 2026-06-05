@@ -33,8 +33,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.data.model.Run
 import com.example.corsa.ui.CorsaRoute
-import com.example.corsa.ui.screens.friends.formatFeedDate
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.toFeedDateString
 
 
 data class UserEntry(
@@ -141,7 +141,7 @@ fun RunCard(entry: Run, navController: NavController) {
 //                    style      = MaterialTheme.typography.labelLarge,
 //                )
                 Text(
-                    text  = formatFeedDate(entry.startTime.toString()),
+                    text  = entry.startTimeLocal.toFeedDateString(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

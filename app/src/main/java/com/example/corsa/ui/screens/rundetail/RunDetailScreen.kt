@@ -53,6 +53,7 @@ import com.example.corsa.ui.screens.splash.SplashScreen
 import com.example.corsa.utils.AppError
 import com.example.corsa.utils.latLngs
 import com.example.corsa.utils.parseRunGeoJson
+import com.example.corsa.utils.toFeedDateString
 
 private const val ROUTE_SOURCE_ID = "run-route-source"
 private const val ROUTE_LAYER_ID  = "run-route-layer"
@@ -275,7 +276,7 @@ fun RunDetailSheetContent(
         item {
             UserDateRow(
                 runnerProfile = runnerProfile,
-                startTime = run.startTime.toString(),
+                startTime = run.startTimeLocal.toFeedDateString(),
                 onProfileNavigation = onProfileNavigation
             )
         }
@@ -554,7 +555,7 @@ fun CommentItem(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = comment.commentCreatedAt.toString(),
+                    text = comment.commentCreatedAt.toFeedDateString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -113,7 +113,7 @@ fun ProfileHeader(
             Spacer(Modifier.width(Spacing.md))
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(Size.l)
                     .clip(CircleShape)
                     .background(
                         if (userInfo.avatarUrl != null) Color.Transparent
