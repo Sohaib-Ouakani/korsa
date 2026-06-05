@@ -21,6 +21,8 @@ data class Profile(
     val createdAt: Instant? = null,
     @SerialName("updated_at")
     val updatedAt: Instant? = null,
+    @SerialName("completed_challenges_updated_at")
+    val completedChallengesUpdatedAt: Instant? = null,
 )
 
 @Serializable

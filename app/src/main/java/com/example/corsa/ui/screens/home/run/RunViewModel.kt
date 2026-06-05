@@ -13,6 +13,7 @@ import com.example.corsa.data.model.Profile
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.service.RunTrackingService
+import com.example.corsa.utils.goalFromLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -107,7 +108,7 @@ class RunViewModel(
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     private val _runState = MutableStateFlow(RunState())
     private val _stopWatchState = MutableStateFlow(StopWatchState())
-    private val _profile = MutableStateFlow<Profile?>(null)
+    private val _profile = MutableStateFlow(emptyProfile)
 
 
     val uiState: StateFlow<RunUiState> = combine(
@@ -162,10 +163,7 @@ class RunViewModel(
     }
 
     private fun finishRun(sw: StopWatchState, run: RunState) {
-        val userId = _profile.value?.id ?: run {
-            _saveState.value = SaveState.Error("Profile not loaded, run not saved")
-            return
-        }
+        val userId = _profile.value.id
         if (run.points.size < 2) {
             _saveState.value = SaveState.ValidationError("Run too short to save")
             return
@@ -190,6 +188,9 @@ class RunViewModel(
                 distanceMeters   = run.distanceMeters,
                 meanPaceSecPerKm = run.currentPaceSecPerKm,
             )
+            if (profilesRepository.weeklyKmByUserId(userId) > goalFromLevel(_profile.value.level)) {
+                profilesRepository.increaseChallengeNumber()
+            }
             _saveState.value = SaveState.Success
         } catch (e: Exception) {
             _saveState.value = SaveState.Error(e.message ?: "Unknown error")
@@ -206,3 +207,15 @@ class RunViewModel(
     private fun calculatePace(elapsedMs: Long, distanceMeters: Float): Int =
         if (distanceMeters > 0) (elapsedMs / 1000f / (distanceMeters / 1000f)).toInt() else 0
 }
+
+private val emptyProfile = Profile(
+    id = "",
+    authUserId = "",
+    username = "",
+    avatarPath = null,
+    level = 1,
+    completedChallenges = 0,
+    totalKm = 0f,
+    createdAt = null,
+    updatedAt = null
+)

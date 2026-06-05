@@ -7,6 +7,7 @@ import com.example.corsa.data.remote.LocationInfo
 import com.example.corsa.data.remote.LocationInfoRemote
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.utils.AppError
+import com.example.corsa.utils.goalFromLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -47,7 +48,7 @@ class HomeViewModel(
             try {
                 val loaded = profilesRepository.getMyProfile()
                 val weeklyKm = profilesRepository.weeklyKmByUserId(loaded.id)
-                val goalKm = loaded.level * 10f
+                val goalKm = goalFromLevel(loaded.level)
                 val profileUrl = if(loaded.avatarPath != null) {
                     profilesRepository.avatarUrl(loaded.avatarPath)
                 } else null
