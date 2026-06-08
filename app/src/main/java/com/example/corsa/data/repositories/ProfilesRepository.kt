@@ -276,6 +276,8 @@ class ProfilesRepositoryImpl(
     override suspend fun updateProfile(update: ProfileUpdate): Profile {
         val authUserId = getMyAuthUserId()
 
+        _getMyProfileCache = null
+
         return supabase.postgrest["profiles"]
             .update(update) {
                 filter {
