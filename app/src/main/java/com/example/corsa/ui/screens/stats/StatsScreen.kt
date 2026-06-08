@@ -36,6 +36,7 @@ import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.ui.screens.splash.SplashScreen
+import com.example.corsa.ui.screens.splash.sprint
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
@@ -100,36 +101,14 @@ private fun ProfileHeader(
             text = infoEntries.displayName,
             color = cs.onSurface,
             style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.weight(1f), // occupa lo spazio senza spingere l'avatar
+            modifier = Modifier.weight(1f),// occupa lo spazio senza spingere l'avatar
         )
         Spacer(Modifier.width(Spacing.md))
-        if (infoEntries.avatarUrl != null) {
-            AsyncImage(
-                model = infoEntries.avatarUrl,
-                contentDescription = "${infoEntries.displayName}'s avatar",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(Size.l)
-                    .clip(CircleShape)
-                    .background(cs.secondaryContainer),
-            )
-        } else {
-            Surface(
-                modifier = Modifier
-                    .size(Size.l)
-                    .clip(CircleShape)
-                    .background(cs.secondaryContainer),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxSize(),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
+        Icon(
+            imageVector = sprint,
+            contentDescription = null,
+            modifier = Modifier.size(Size.l),
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
 }

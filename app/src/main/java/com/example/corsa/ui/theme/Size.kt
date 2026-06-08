@@ -8,6 +8,7 @@ object Size {
     val l = 52.dp
     val xm = 42.dp
     val m = 30.dp
+    val ms = 20.dp
     val s = 10.dp
 
 }
