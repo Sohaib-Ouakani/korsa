@@ -59,7 +59,7 @@ private fun RowScope.StatsItem(
         },
         label = {
             Text(
-                "STATS",
+                "PROFILO",
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
             )
