@@ -190,7 +190,7 @@ class RunViewModel(
                 distanceMeters   = run.distanceMeters,
                 meanPaceSecPerKm = run.currentPaceSecPerKm,
             )
-            if (profilesRepository.weeklyKmByUserId(userId) > goalFromLevel(_profile.value.level)) {
+            if (profilesRepository.weeklyKmByUserId(userId) >= goalFromLevel(_profile.value.level)) {
                 profilesRepository.increaseChallengeNumber()
             }
             _saveState.value = SaveState.Success

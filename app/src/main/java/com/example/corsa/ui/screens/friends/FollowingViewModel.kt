@@ -38,6 +38,7 @@ data class FollowState (
     val isLoading: Boolean,
     val rankEntry: List<UserRankEntry> = listOf(),
     val feedEntry: List<RunFeedEntry> = listOf(),
+    val myUserId: String = "",
     val error: AppError = AppError.Absent,
 
     )
@@ -141,7 +142,7 @@ class FollowingViewModel(
                 error = AppError.Absent
             )
             try {
-                var entries: List<UserRankEntry> = coroutineScope {
+                val entries: List<UserRankEntry> = coroutineScope {
                     profilesRepository.getProfileIFollow()
                         .plus(profilesRepository.getMyProfile()).map { profile ->
                         async {
@@ -160,6 +161,7 @@ class FollowingViewModel(
                     SortBy.Level      -> entries.sortedByDescending { it.level }
                 })
                 myProfile = profilesRepository.getMyProfile()
+                _followState.updateFollowState(myUserId = myProfile?.id)
             } catch (e: Exception) {
                 _followState.updateFollowState(error = AppError.Present(e.message ?: "Error loading rank"))
             } finally {
@@ -216,12 +218,14 @@ class FollowingViewModel(
         isLoading: Boolean? = null,
         rankEntry: List<UserRankEntry>? = null,
         feedEntry: List<RunFeedEntry>? = null,
+        myUserId: String? = null,
         error: AppError? = null,
     ){
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
             rankEntry = rankEntry ?: value.rankEntry,
             feedEntry = feedEntry ?: value.feedEntry,
+            myUserId = myUserId ?: value.myUserId,
             error = error ?: value.error
 
         )

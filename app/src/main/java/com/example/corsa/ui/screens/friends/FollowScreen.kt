@@ -453,14 +453,15 @@ fun Rank(followState: FollowState, navController: NavController, action: FollowA
                     RankTab.Level      -> SortBy.Level
                 },
                 navController,
-                action
+                action,
+                followState.myUserId
             )
         }
     }
 }
 
 @Composable
-fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavController, action: FollowAction) {
+fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavController, action: FollowAction, myUserId: String) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(Spacing.sm, Spacing.sm, Spacing.sm, 80.dp),
@@ -471,17 +472,23 @@ fun RankList(entries: List<UserRankEntry>, sortBy: SortBy, navController: NavCon
                 entry    = entry,
                 sortBy   = sortBy,
                 navController,
-                action
+                action,
+                myUserId
             )
         }
     }
 }
 
 @Composable
-fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController: NavController, action: FollowAction) {
+fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController: NavController, action: FollowAction, myUserId: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = {navController.navigate(CorsaRoute.ProfileDetailScreen(entry.userId))}
+        onClick = {
+            if(entry.userId == myUserId) {
+                navController.navigate(CorsaRoute.StatsScreen)
+            }else {
+                navController.navigate(CorsaRoute.ProfileDetailScreen(entry.userId))
+            }}
     ) {
         Row(
             modifier              = Modifier.padding(Spacing.md, Spacing.md),
