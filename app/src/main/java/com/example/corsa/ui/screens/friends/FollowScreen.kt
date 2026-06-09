@@ -84,14 +84,14 @@ fun FollowScreen(
     searchState: SearchState,
     action: FollowAction
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-
+    val snackBarHostState = remember { SnackbarHostState() }
     LaunchedEffect(followState) {
         when(followState.error) {
-            is AppError.Present -> snackbarHostState.showSnackbar(followState.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(followState.error.message)
             else -> {}
         }
     }
+
     var selectedTab by remember { mutableStateOf(StatsTab.Rank) }
     val tabs = StatsTab.entries
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -100,10 +100,11 @@ fun FollowScreen(
             action.refreshFriends()
         }
     }
+
     Scaffold(
         topBar = { TopBar(navController, searchState.myProfileUrl) },
         bottomBar = { BottomBar(navController) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         floatingActionButton = { FloatingActionButton(
             onClick = { navController.navigate(CorsaRoute.AddFollowScreen) },
             modifier = Modifier.size(56.dp)
@@ -119,7 +120,6 @@ fun FollowScreen(
 
             FriendSearchBar(searchState, navController, action)
 
-            // ── Primary Row  ────────────────────────────────────────────────
             PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
                 tabs.forEach { tab ->
                     Tab(
@@ -138,8 +138,6 @@ fun FollowScreen(
     }
 }
 
-// ── Feed part  ────────────────────────────────────────────────
-
 @Composable
 fun Feed(state: FollowState, navController: NavController, action: FollowAction) {
     if (state.isLoading) {
@@ -152,10 +150,9 @@ fun Feed(state: FollowState, navController: NavController, action: FollowAction)
             CircularProgressIndicator()
         }
     } else {
-    FeedList(state, navController, action)
-        }
+        FeedList(state, navController, action)
+    }
 }
-
 
 @Composable
 fun FeedList(state: FollowState, navController: NavController, action: FollowAction) {
@@ -169,15 +166,12 @@ fun FeedList(state: FollowState, navController: NavController, action: FollowAct
     }
 }
 
-
 @Composable
 fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = {navController.navigate(CorsaRoute.RunDetailScreen(entry.runId))}
     ) {
-
-        // ── Immagine percorso (elemento principale) ───────────────────
         if (entry.pathUrl != null) {
             AsyncImage(
                 model              = entry.pathUrl,
@@ -188,7 +182,6 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
                     .height(180.dp),
             )
         } else {
-            // Placeholder se non c'è immagine
             Box(
                 modifier         = Modifier
                     .fillMaxWidth()
@@ -205,7 +198,6 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
             }
         }
 
-        // ── Informazioni sotto l'immagine ─────────────────────────────
         Row(
             modifier              = Modifier
                 .fillMaxWidth()
@@ -213,7 +205,6 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            // Avatar
             val avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
@@ -264,7 +255,6 @@ fun FeedCard(entry: RunFeedEntry, navController: NavController, action: FollowAc
     }
 }
 
-// ── Searchbar part  ────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendSearchBar(searchState: SearchState, navController: NavController, action: FollowAction) {
@@ -403,7 +393,6 @@ fun FriendSearchBar(searchState: SearchState, navController: NavController, acti
         }
     }
 }
-// ── Rank part  ────────────────────────────────────────────────
 
 enum class RankTab(val label: String) {
     Kilometers("Kilometri"),
@@ -484,11 +473,12 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = {
-            if(entry.userId == myUserId) {
+            if (entry.userId == myUserId) {
                 navController.navigate(CorsaRoute.StatsScreen)
-            }else {
+            } else {
                 navController.navigate(CorsaRoute.ProfileDetailScreen(entry.userId))
-            }}
+            }
+        }
     ) {
         Row(
             modifier              = Modifier.padding(Spacing.md, Spacing.md),
@@ -501,7 +491,7 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
             ) {
                 if (position == 1) {
                     Icon(
-                        imageVector        = Icons.Outlined.EmojiEvents, // trofeo
+                        imageVector        = Icons.Outlined.EmojiEvents,
                         contentDescription = "1st place",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier           = Modifier.size(20.dp),
@@ -513,7 +503,7 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
                     color      = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            var avatarUrl = action.getAvatarUrl(entry.userId)
+            val avatarUrl = action.getAvatarUrl(entry.userId)
             Box(
                 modifier         = Modifier
                     .size(40.dp)
@@ -539,7 +529,7 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
                 Text(
                     text = entry.displayName,
                     style = MaterialTheme.typography.labelLarge,
-                    )
+                )
             }
             val (statLabel, statValue) = when (sortBy) {
                 SortBy.Kilometers -> "KM"  to "%.1f".format(entry.weekKm)
@@ -559,4 +549,3 @@ fun RankCard(position: Int, entry: UserRankEntry, sortBy: SortBy, navController:
         }
     }
 }
-

@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -50,11 +49,9 @@ fun HomeScreen(
                 }
                 Content(cs, navController, state)
             }
-
             LocationPermissionState.DENIED -> {
                 PermissionRationaleScreen(onRequest = requestPermission)
             }
-
             LocationPermissionState.PERMANENTLY_DENIED -> {
                 //send to Settings
                 PermissionDeniedScreen()
@@ -69,19 +66,20 @@ private fun Content(
     navController: NavController,
     state: HomeState
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state) {
         when(state.appError) {
             is AppError.Present -> {
-                snackbarHostState.showSnackbar(state.appError.message)
+                snackBarHostState.showSnackbar(state.appError.message)
             }
             else -> {}
         }
     }
+
     Scaffold(
         topBar = { TopBar(navController, state.myProfileUrl) },
         bottomBar = { BottomBar(navController) },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { innerPadding ->
         if (state.isLoading) {
             SplashScreen()
@@ -286,14 +284,15 @@ private fun PermissionDeniedScreen() {
             color = cs.onBackground
         )
         Spacer(Modifier.height(Spacing.lg))
-        Button(onClick = {
-            // Opens the app's system settings page
-            val intent = android.content.Intent(
-                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                android.net.Uri.fromParts("package", context.packageName, null)
-            )
-            context.startActivity(intent)
-        }) {
+        Button(
+            onClick = {
+                val intent = android.content.Intent(
+                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.fromParts("package", context.packageName, null)
+                )
+                context.startActivity(intent)
+            }
+        ) {
             Text("Open Settings")
         }
     }

@@ -45,15 +45,14 @@ fun StopWatchScreen(
     val run = state.run
     val stopWatch = state.stopWatch
     val title = if (stopWatch.isRunning) "GO!" else "READY?"
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
-    // Navigate home automatically when save succeeds
     LaunchedEffect(saveState) {
         when (saveState) {
             is SaveState.Success -> navController.navigate(CorsaRoute.Home)
             is SaveState.ValidationError -> navController.navigate(CorsaRoute.Home)
             is SaveState.Error -> {
-                snackbarHostState.showSnackbar(saveState.message)
+                snackBarHostState.showSnackbar(saveState.message)
                 navController.navigate(CorsaRoute.Home)
             }
             else -> {}
@@ -67,13 +66,13 @@ fun StopWatchScreen(
                 requestNotification()
             }
         }
-        Content(snackbarHostState, saveState, cs, title, run, stopWatch, actions)
+        Content(snackBarHostState, saveState, cs, title, run, stopWatch, actions)
     }
 }
 
 @Composable
 private fun Content(
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
     saveState: SaveState,
     cs: ColorScheme,
     title: String,
@@ -82,7 +81,7 @@ private fun Content(
     actions: RunActions,
 ) {
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { paddingValues ->
         if (saveState is SaveState.Saving) {
             SplashScreen()
@@ -101,13 +100,11 @@ private fun Content(
                 style = MaterialTheme.typography.displayLarge
             )
             Spacer(Modifier.height(Spacing.lg))
-            // Distance
             Text(
                 text = "${"%.2f".format(run.distanceKm)} km",
                 style = MaterialTheme.typography.displayMedium,
                 color = cs.inverseOnSurface,
             )
-            // Pace
             Text(
                 text = run.formattedPace,
                 style = MaterialTheme.typography.titleMedium,

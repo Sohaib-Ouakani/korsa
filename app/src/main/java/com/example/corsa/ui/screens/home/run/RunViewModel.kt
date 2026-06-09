@@ -82,7 +82,7 @@ class RunViewModel(
     private val runsRepository: RunsRepository,
     private val profilesRepository: ProfilesRepository,
     private val appContext: Context,
-): ViewModel() {
+) : ViewModel() {
     val runActions = RunActions(
         ::start,
         ::pause,
@@ -111,7 +111,6 @@ class RunViewModel(
     private val _runState = MutableStateFlow(RunState())
     private val _stopWatchState = MutableStateFlow(StopWatchState())
     private val _profile = MutableStateFlow(emptyProfile)
-
 
     val uiState: StateFlow<RunUiState> = combine(
         _stopWatchState, _runState, _saveState

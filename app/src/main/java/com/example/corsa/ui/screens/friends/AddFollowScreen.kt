@@ -25,7 +25,6 @@ import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.composables.BottomBar
 
-// ── Screen ────────────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFollowScreen(
@@ -33,22 +32,10 @@ fun AddFollowScreen(
     searchState: SearchState,
     action: FollowAction
 ) {
-    var query by remember { mutableStateOf("") }
-
-    // Replace with real ViewModel state
-
-
-     if (query.isBlank()) {
-        searchState.notFriends
-    } else {
-        searchState.notFriends.filter { it.username.contains(query, ignoreCase = true) }
-    }
-
     Scaffold(
         topBar = { BackTopBar(navController) },
         bottomBar = { BottomBar(navController) },
     ) { innerPadding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,20 +44,19 @@ fun AddFollowScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-
-            // ── Search bar ────────────────────────────────────────────────
             SearchBar(searchState, action, navController)
-
             Spacer(modifier = Modifier.height(20.dp))
-
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(searchState: SearchState,
-              action: FollowAction, navController: NavController) {
+fun SearchBar(
+    searchState: SearchState,
+    action: FollowAction,
+    navController: NavController
+) {
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val suggested = searchState.notFriends
@@ -136,7 +122,6 @@ fun SearchBar(searchState: SearchState,
                     ListItem(
                         headlineContent = { Text(friend.username) },
                         leadingContent = {
-                            // Avatar circle
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -204,7 +189,3 @@ fun SearchBar(searchState: SearchState,
         }
     }
 }
-
-
-
-

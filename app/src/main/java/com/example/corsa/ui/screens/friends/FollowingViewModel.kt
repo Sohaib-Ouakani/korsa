@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
-
 data class UserRankEntry(
     val userId: String,
     val displayName: String,
@@ -39,16 +38,15 @@ data class FollowState (
     val rankEntry: List<UserRankEntry> = listOf(),
     val feedEntry: List<RunFeedEntry> = listOf(),
     val myUserId: String = "",
-    val error: AppError = AppError.Absent,
-
-    )
+    val error: AppError = AppError.Absent
+)
 
 data class SearchState(
     val isLoading: Boolean,
     val friendsName: List<Profile> = emptyList(),
     val notFriends: List<Profile> = emptyList(),
     val error: AppError = AppError.Absent,
-    val myProfileUrl: String? = null,
+    val myProfileUrl: String? = null
 )
 
 data class FollowAction(
@@ -58,7 +56,6 @@ data class FollowAction(
     val loadFeed: () -> Unit,
     val getAvatarUrl: (String) -> String?
 )
-
 
 enum class SortBy { Kilometers, Level }
 
@@ -83,35 +80,32 @@ class FollowingViewModel(
 
     init {
         loadFriendsProfiles()
-        getMyprofileUrl()
+        getMyProfileUrl()
     }
-
-    // ── Load & cache friends profiles once ──────────────────────────────────
 
     private  fun loadFriendsProfiles() {
         viewModelScope.launch {
             try {
-            val friends = profilesRepository.getProfileIFollow()
-            val notFriends = profilesRepository.getProfilesIDoNotFollow()
-            _searchState.updateSearchState(
-                friendsName = friends,
-                notFriends  = notFriends,
-                error = AppError.Absent,
-            )
-            loadRanking(SortBy.Kilometers)
-            loadFeed()
-        } catch (e: Exception) {
-            _followState.updateFollowState(error = AppError.Present(e.message ?: "Error while loading"))
-            _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error while loading"))
-        } finally {
-            _followState.updateFollowState(isLoading = false)
-            _searchState.updateSearchState(isLoading = false)
+                val friends = profilesRepository.getProfileIFollow()
+                val notFriends = profilesRepository.getProfilesIDoNotFollow()
+                _searchState.updateSearchState(
+                    friendsName = friends,
+                    notFriends  = notFriends,
+                    error = AppError.Absent,
+                )
+                loadRanking(SortBy.Kilometers)
+                loadFeed()
+            } catch (e: Exception) {
+                _followState.updateFollowState(error = AppError.Present(e.message ?: "Error while loading"))
+                _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error while loading"))
+            } finally {
+                _followState.updateFollowState(isLoading = false)
+                _searchState.updateSearchState(isLoading = false)
+            }
         }
-        }
-
     }
 
-    fun getMyprofileUrl() {
+    private fun getMyProfileUrl() {
         viewModelScope.launch {
             _searchState.updateSearchState(
                 isLoading = true,
@@ -119,7 +113,7 @@ class FollowingViewModel(
             )
             try {
                 profilesRepository.getMyUserEntry().avatarUrl
-               _searchState.updateSearchState(myprofileUrl =  profilesRepository.getMyUserEntry().avatarUrl)
+               _searchState.updateSearchState(myProfileUrl =  profilesRepository.getMyUserEntry().avatarUrl)
             } catch (e: Exception) {
                 _searchState.updateSearchState(error = AppError.Present(e.message ?: "Error loading Profile immage"))
             } finally {
@@ -127,8 +121,6 @@ class FollowingViewModel(
             }
         }
     }
-
-    // ── Ranking ─────────────────────────────────────────────────────────────
 
     private fun refreshFriends() {
         viewModelScope.launch {
@@ -170,13 +162,11 @@ class FollowingViewModel(
         }
     }
 
-    fun buildAvatarUrl(avatarPath: String): String {
+    private fun buildAvatarUrl(avatarPath: String): String {
         return profilesRepository.avatarUrl(avatarPath)
     }
 
-    // ── Feed ────────────────────────────────────────────────────────────────
-
-    fun loadFeed() {
+    private fun loadFeed() {
         viewModelScope.launch {
             _followState.updateFollowState(
                 isLoading = true,
@@ -206,7 +196,7 @@ class FollowingViewModel(
         }
     }
 
-    fun getAvatarUrl(userId: String): String? {
+    private fun getAvatarUrl(userId: String): String? {
         val allProfiles = _searchState.value.friendsName + listOfNotNull(myProfile)
         return allProfiles
             .find { it.id == userId }
@@ -235,14 +225,14 @@ class FollowingViewModel(
         isLoading: Boolean? = null,
         friendsName: List<Profile>? = null,
         notFriends: List<Profile>? = null,
-        myprofileUrl: String? = null,
+        myProfileUrl: String? = null,
         error: AppError? = null,
     ){
         value = value.copy(
             isLoading = isLoading ?: value.isLoading,
             friendsName = friendsName ?: value.friendsName,
             notFriends = notFriends?: value.notFriends,
-            myProfileUrl = myprofileUrl?: value.myProfileUrl,
+            myProfileUrl = myProfileUrl?: value.myProfileUrl,
             error = error ?: value.error
         )
 

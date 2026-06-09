@@ -18,12 +18,12 @@ fun AuthScreen(
     navController: NavController,
     redirectedFromRunDeepLink: Boolean
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
     val rememberRedirectedFromDeepLink = remember { redirectedFromRunDeepLink }
 
+    val snackBarHostState = remember { SnackbarHostState() }
     LaunchedEffect(rememberRedirectedFromDeepLink) {
         if (redirectedFromRunDeepLink) {
-            snackbarHostState.showSnackbar(
+            snackBarHostState.showSnackbar(
                 "Devi prima accedere o creare un account. " +
                             "\nDopo averlo fatto prova a riutillizare il link"
             )
@@ -32,7 +32,7 @@ fun AuthScreen(
 
     Scaffold(
         topBar = { LoginTopBar() },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier

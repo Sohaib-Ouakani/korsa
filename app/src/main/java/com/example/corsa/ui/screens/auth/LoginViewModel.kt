@@ -29,7 +29,7 @@ data class LoginActions(
 
 class LoginViewModel(
     private val authRepository: AuthRepository
-): ViewModel() {
+) : ViewModel() {
 
     val loginActions = LoginActions(
         loginWithEmail = ::loginWithEmail,

@@ -33,10 +33,10 @@ fun RegisterScreen(
     val composeAuth = koinInject<ComposeAuth>()
     val googleAuthState = composeAuth.rememberSignInWithGoogle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
         when (state.error) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
@@ -46,7 +46,7 @@ fun RegisterScreen(
             navController.popBackStack()
             actions.clearError()
         }) },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier

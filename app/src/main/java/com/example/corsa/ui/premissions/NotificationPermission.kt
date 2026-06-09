@@ -47,7 +47,7 @@ fun NotificationPermissionHandler(
         }
     }
 
-    // Below Android 13 notifications don't need runtime permission,
+    // below Android 13 notifications don't need runtime permission
     val request: () -> Unit = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
     } else {

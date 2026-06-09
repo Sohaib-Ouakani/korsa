@@ -26,11 +26,10 @@ data class HomeActions(
     val updateLocationLabelData: () -> Unit,
 )
 
-
 class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val locationInfoRemote: LocationInfoRemote
-): ViewModel() {
+) : ViewModel() {
     val homeActions = HomeActions(
         ::updateLocationLabelData
     )
@@ -82,7 +81,6 @@ class HomeViewModel(
         }
     }
 
-
     private fun MutableStateFlow<HomeState>.updateState(
         goalKm: Float? = null,
         currentKm: Float? = null,
@@ -101,5 +99,5 @@ class HomeViewModel(
             appError = appError ?: value.appError,
             isLoading = isLoading ?: value.isLoading
         )
-     }
+    }
 }
