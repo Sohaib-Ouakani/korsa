@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Dehaze
-import androidx.compose.material.icons.filled.DeviceUnknown
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Thunderstorm

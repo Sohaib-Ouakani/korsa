@@ -5,22 +5,11 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 
-// ── GeoJSON helpers ───────────────────────────────────────────────────────
 
-/**
- * Parses the run's GeoJSON string and returns a [FeatureCollection] ready
- * to feed into a [GeoJsonSource].
- *
- * Accepts any top-level GeoJSON type:
- *   - FeatureCollection  → used as-is
- *   - Feature            → wrapped in a FeatureCollection
- *   - Geometry (LineString, Point, …) → wrapped in Feature + FeatureCollection
- */
 fun parseRunGeoJson(geoJson: String): FeatureCollection {
     val trimmed = geoJson.trim()
     return try {
         val fc = FeatureCollection.fromJson(trimmed)
-        // Only accept if it actually has features
         if (!fc.features().isNullOrEmpty()) {
             fc
         } else {
@@ -46,10 +35,6 @@ fun parseRunGeoJson(geoJson: String): FeatureCollection {
     }
 }
 
-/**
- * Extracts every [LatLng] from a [FeatureCollection] so we can build
- * a camera bounds that fits the whole route.
- */
 fun FeatureCollection.latLngs(): List<org.maplibre.android.geometry.LatLng> =
     features()
         ?.flatMap { feature ->

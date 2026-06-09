@@ -35,8 +35,9 @@ class MainActivity : ComponentActivity() {
 }
 
 sealed interface DeepLink {
-    data class SharedRun(val shareToken: String): DeepLink
-    data object ResetPassword: DeepLink
+
+    data class SharedRun(val shareToken: String) : DeepLink
+    data object ResetPassword : DeepLink
 
     companion object {
         fun resolve(uri: Uri?): DeepLink? {

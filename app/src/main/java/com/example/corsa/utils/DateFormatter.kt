@@ -12,7 +12,7 @@ fun LocalDateTime.toFeedDateString(): String {
             "dd MMM yyyy · HH:mm", java.util.Locale.getDefault()
         )
         javaLdt.format(formatter)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         toString()
     }
 }

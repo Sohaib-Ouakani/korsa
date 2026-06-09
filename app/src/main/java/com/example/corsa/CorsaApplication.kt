@@ -20,16 +20,6 @@ class CorsaApplication : Application() {
 
     private fun createNotificationChannels() {
         val manager = getSystemService(NotificationManager::class.java)
-
-        // Existing run tracking channel (move it here if it isn't already)
-//        manager.createNotificationChannel(
-//            NotificationChannel(
-//                "run_tracking_channel",
-//                "Run Tracking",
-//                NotificationManager.IMPORTANCE_LOW
-//            )
-//        )
-
         manager.createNotificationChannel(
             NotificationChannel(
                 "weekly_challenge_channel",
