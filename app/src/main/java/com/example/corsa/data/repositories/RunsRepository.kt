@@ -42,6 +42,7 @@ import kotlin.time.Instant
 import kotlin.time.Clock
 
 interface RunsRepository {
+
     suspend fun getRunById(id: String): Run
     suspend fun getRunByShareToken(token: String): Run
     suspend fun getRunsByUserId(userId: String): List<Run>
@@ -73,8 +74,8 @@ class RunsRepositoryImpl(
 
     override suspend fun getRunById(id: String): Run {
         return supabase
-            .from("runs_with_geojson")  // ← was "runs"
-            .select {                    // ← drop Columns.raw(...)
+            .from("runs_with_geojson")
+            .select {
                 filter { eq("id", id) }
             }
             .decodeSingle<Run>()
@@ -175,48 +176,6 @@ class RunsRepositoryImpl(
             }
         }
         return gain.toFloat()
-    }
-
-    @Serializable
-    private data class OpenMeteoResponse(val hourly: HourlyData)
-
-    @Serializable
-    private data class HourlyData(
-        val time: List<String>,
-        val temperature_2m: List<Double?>
-    )
-    private suspend fun fetchTemperatureForRun(
-        client: HttpClient,
-        lat: Double,
-        lon: Double,
-        startTime: LocalDateTime
-    ): Float? {
-        val date = startTime.date.toString()
-        val hour = startTime.hour
-        val isToday = startTime.date == Clock.System.now()
-            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-        val baseUrl = if (isToday)
-            "https://api.open-meteo.com/v1/forecast"
-        else
-            "https://archive-api.open-meteo.com/v1/archive"
-
-        return try {
-            val response = client.get(baseUrl) {
-                parameter("latitude", lat)
-                parameter("longitude", lon)
-                parameter("hourly", "temperature_2m")
-                parameter("start_date", date)
-                parameter("end_date", date)
-                parameter("timezone", "auto")
-            }
-            val body = json.decodeFromString<OpenMeteoResponse>(response.bodyAsText())
-            val targetTime = "${date}T${hour.toString().padStart(2, '0')}:00"
-            val index = body.hourly.time.indexOf(targetTime)
-            if (index >= 0) body.hourly.temperature_2m[index]?.toFloat() else null
-        } catch (e: Exception) {
-            null
-        }
     }
 
     override fun observeRunUpdates(userId: String): Flow<List<Run>> = callbackFlow {
@@ -350,6 +309,37 @@ class RunsRepositoryImpl(
         }
     }
 
+    private suspend fun fetchTemperatureForRun(
+        client: HttpClient,
+        lat: Double,
+        lon: Double,
+        startTime: LocalDateTime
+    ): Float? {
+        val date = startTime.date.toString()
+        val hour = startTime.hour
+        val isToday = startTime.date == Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        val baseUrl = if (isToday) OPENMETEO_URL else OPENMETEO_ARCHIVE_URL
+
+        return try {
+            val response = client.get(baseUrl) {
+                parameter("latitude", lat)
+                parameter("longitude", lon)
+                parameter("hourly", "temperature_2m")
+                parameter("start_date", date)
+                parameter("end_date", date)
+                parameter("timezone", "auto")
+            }
+            val body = json.decodeFromString<OpenMeteoResponse>(response.bodyAsText())
+            val targetTime = "${date}T${hour.toString().padStart(2, '0')}:00"
+            val index = body.hourly.time.indexOf(targetTime)
+            if (index >= 0) body.hourly.temperature2m[index]?.toFloat() else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun Run.wrapPathAsFeatureCollection(): Run {
         val featureCollection = buildJsonObject {
             put("type", "FeatureCollection")
@@ -357,16 +347,18 @@ class RunsRepositoryImpl(
                 addJsonObject {
                     put("type", "Feature")
                     putJsonObject("properties") {}
-                    put("geometry", path)   // path is already JsonElement, no parsing needed
+                    put("geometry", path)
                 }
             }
         }
+
         return copy(path = featureCollection)
     }
 
-    private fun Long.toIsoString(): String =
-        Instant.fromEpochMilliseconds(this).toString()  // produces "2024-05-30T10:30:00Z"
-
+    companion object {
+        private const val OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
+        private const val OPENMETEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+    }
 }
 
 @Serializable
@@ -395,4 +387,14 @@ private data class AuthorProfile(
     val id: String,
     val username: String,
     @SerialName("avatar_path") val avatarPath: String? = null,
+)
+
+@Serializable
+private data class OpenMeteoResponse(val hourly: HourlyData)
+
+@Serializable
+private data class HourlyData(
+    val time: List<String>,
+    @SerialName("temperature_2m")
+    val temperature2m: List<Double?>
 )

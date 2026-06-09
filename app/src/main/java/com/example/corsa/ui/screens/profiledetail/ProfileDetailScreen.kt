@@ -28,7 +28,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BackTopBar
@@ -72,8 +70,8 @@ fun ProfileDetailScreen(
         ) {
             ProfileStats(
                 navController = navController,
-                runentries    = state.runs,
-                infoentries   = state.userEntry,
+                runEntries    = state.runs,
+                infoEntries   = state.userEntry,
                 header = { ProfileHeader(
                     userInfo      = state.userEntry,
                     isFollowing   = state.isFollowing,

@@ -36,7 +36,6 @@ import com.example.corsa.ui.CorsaRoute
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.toFeedDateString
 
-
 data class UserEntry(
     val displayName: String,
     val avatarUrl: String?,
@@ -49,8 +48,8 @@ data class UserEntry(
 @Composable
 fun ProfileStats(
     navController: NavController,
-    runentries: List<Run>,
-    infoentries: UserEntry,
+    runEntries: List<Run>,
+    infoEntries: UserEntry,
     header: @Composable () -> Unit = {},
 ) {
     LazyColumn(
@@ -60,16 +59,15 @@ fun ProfileStats(
         item {
             header()
         }
-        // ── Griglia statica come singolo item ──────────────────────────
         item {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    StatCard("LIVELLO", infoentries.level.toString(), modifier = Modifier.weight(1f))
-                    StatCard("Challenge\nCompletate", infoentries.completedChallenge.toString(), modifier = Modifier.weight(1f))
+                    StatCard("LIVELLO", infoEntries.level.toString(), modifier = Modifier.weight(1f))
+                    StatCard("Challenge\nCompletate", infoEntries.completedChallenge.toString(), modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    StatCard("Totale Km", "%.2f".format(infoentries.totKm), modifier = Modifier.weight(1f))
-                    StatCard("Km Settimanali", "%.2f".format(infoentries.weekKm), modifier = Modifier.weight(1f))
+                    StatCard("Totale Km", "%.2f".format(infoEntries.totKm), modifier = Modifier.weight(1f))
+                    StatCard("Km Settimanali", "%.2f".format(infoEntries.weekKm), modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -84,8 +82,7 @@ fun ProfileStats(
             )
         }
 
-        // ── Run cards ─────────────────────────────────────────────────
-        items(runentries) { entry ->
+        items(runEntries) { entry ->
             RunCard(entry = entry, navController)
         }
     }
@@ -96,8 +93,6 @@ fun RunCard(entry: Run, navController: NavController) {
     Card(modifier = Modifier.fillMaxWidth(),
         onClick = { navController.navigate(CorsaRoute.RunDetailScreen(entry.id)) }
     ) {
-
-        // ── Immagine percorso (elemento principale) ───────────────────
         if (entry.previewPath != null) {
             AsyncImage(
                 model              = entry.previewPath,
@@ -108,7 +103,6 @@ fun RunCard(entry: Run, navController: NavController) {
                     .height(180.dp),
             )
         } else {
-            // Placeholder se non c'è immagine
             Box(
                 modifier         = Modifier
                     .fillMaxWidth()
@@ -124,8 +118,6 @@ fun RunCard(entry: Run, navController: NavController) {
                 )
             }
         }
-
-        // ── Informazioni sotto l'immagine ─────────────────────────────
         Row(
             modifier              = Modifier
                 .fillMaxWidth()
@@ -133,20 +125,13 @@ fun RunCard(entry: Run, navController: NavController) {
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            // Avatar
             Column(modifier = Modifier.weight(1f)) {
-                //nel caso si puo mettere la citta
-//                Text(
-//                    text       = entry.displayName,
-//                    style      = MaterialTheme.typography.labelLarge,
-//                )
                 Text(
                     text  = entry.startTimeLocal.toFeedDateString(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text       = "%.2f".format((entry.distanceMeters)/1000),
@@ -161,7 +146,6 @@ fun RunCard(entry: Run, navController: NavController) {
         }
     }
 }
-
 
 @Composable
 fun StatCard(
@@ -180,10 +164,10 @@ fun StatCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize() // Occupa tutto lo spazio della Card
+                .fillMaxSize()
                 .padding(horizontal = Spacing.sm, vertical = Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // Centra verticalmente
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = value,
@@ -197,9 +181,6 @@ fun StatCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary
             )
-
-
-
         }
     }
 }

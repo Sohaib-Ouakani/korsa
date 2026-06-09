@@ -8,12 +8,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
-/**
- * Wraps FusedLocationProviderClient in a cold Flow.
- * Each collector gets its own stream of location updates.
- *
- * @param intervalMs   how often to request a new fix (ms)
- */
 class LocationProvider(context: Context) {
 
     private val client = LocationServices.getFusedLocationProviderClient(context)
@@ -33,7 +27,7 @@ class LocationProvider(context: Context) {
 
         client.requestLocationUpdates(request, callback, android.os.Looper.getMainLooper())
 
-        // When the Flow collector cancels (e.g. screen leaves composition), clean up
+        // when the Flow collector cancels (e.g. screen leaves composition), clean up
         awaitClose { client.removeLocationUpdates(callback) }
     }
 }

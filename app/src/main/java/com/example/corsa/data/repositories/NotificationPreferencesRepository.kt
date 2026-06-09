@@ -14,6 +14,7 @@ val Context.dataStore by preferencesDataStore(name = "settings")
 class NotificationPreferencesRepository(
     private val dataStore: DataStore<Preferences>
 ) {
+
     val weeklyNotificationEnabled: Flow<Boolean> =
         dataStore.data.map { it[WEEKLY_KEY] ?: false }
 

@@ -38,21 +38,17 @@ class RunTrackingService : Service() {
 
     private val locationProvider: LocationProvider by inject()
 
-    // ── Coroutine scope ──────────────────────────────────────────────────────
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // ── Public state ─────────────────────────────────────────────────────────
     private val _stopWatchState = MutableStateFlow(StopWatchState())
     val stopWatchState: StateFlow<StopWatchState> = _stopWatchState.asStateFlow()
 
     private val _runState = MutableStateFlow(RunState())
     val runState: StateFlow<RunState> = _runState.asStateFlow()
 
-    // ── Private jobs ─────────────────────────────────────────────────────────
     private var stopWatchJob: Job? = null
     private var trackingJob: Job? = null
 
-    // ── Lifecycle ────────────────────────────────────────────────────────────
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -68,7 +64,6 @@ class RunTrackingService : Service() {
         serviceScope.cancel()
     }
 
-    // ── Controls (called by ViewModel) ───────────────────────────────────────
     fun start() {
         Log.d("RunSvc", "start() called, isRunning=${_stopWatchState.value.isRunning}")
         if (_stopWatchState.value.isRunning) return
@@ -86,10 +81,6 @@ class RunTrackingService : Service() {
         _stopWatchState.update { it.copy(isRunning = false) }
     }
 
-    /**
-     * Pauses everything and returns a snapshot of the current state for saving,
-     * then resets internal state so the service is ready for the next run.
-     */
     fun stopAndSnapshot(): Pair<StopWatchState, RunState> {
         pause()
         val snapshot = _stopWatchState.value to _runState.value
@@ -98,7 +89,6 @@ class RunTrackingService : Service() {
         return snapshot
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
     private fun startStopWatchJob() {
         Log.d("RunSvc", "startStopWatchJob launched")
         stopWatchJob?.cancel()
@@ -146,12 +136,11 @@ class RunTrackingService : Service() {
         _runState.value = RunState()
     }
 
-    // ── Notification ─────────────────────────────────────────────────────────
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Run Tracking",
-            NotificationManager.IMPORTANCE_LOW  // silent — no sound/vibration
+            NotificationManager.IMPORTANCE_LOW
         )
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
@@ -170,9 +159,9 @@ class RunTrackingService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID        = "run_tracking_channel"
-        private const val NOTIFICATION_ID   = 1
-        private const val GPS_INTERVAL_MS   = 3_000L
+        private const val CHANNEL_ID = "run_tracking_channel"
+        private const val NOTIFICATION_ID = 1
+        private const val GPS_INTERVAL_MS = 3_000L
         private const val STOPWATCH_TICK_MS = 200L
     }
 }

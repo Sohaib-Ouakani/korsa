@@ -101,9 +101,9 @@ class ProfileDetailViewModel(
             )
             try {
                 if (_state.value.isFollowing) {
-                    profilesRepository.StopFollowToAProfileByUserId(userId)
+                    profilesRepository.stopFollowToAProfileByUserId(userId)
                 } else {
-                    profilesRepository.AddFollowToAProfileByUserId(userId)
+                    profilesRepository.addFollowToAProfileByUserId(userId)
                 }
                 _state.updateState(isFollowing = !_state.value.isFollowing)
             } catch (e: Exception) {

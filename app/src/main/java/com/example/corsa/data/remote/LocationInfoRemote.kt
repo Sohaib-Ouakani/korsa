@@ -16,21 +16,26 @@ data class LocationInfo(
 )
 
 sealed class ApiEndpoint {
+
     abstract val url: String
 
     data class ReverseGeocode(val lat: Double, val lon: Double) : ApiEndpoint() {
-        override val url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json"
+        override val url = "${BASE_URL_GEOCODE}reverse?lat=$lat&lon=$lon&format=json"
     }
 
     data class WeatherForecast(val lat: Double, val lon: Double) : ApiEndpoint() {
-        override val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code"
+        override val url = "${BASE_URL_WEATHER}forecast?latitude=$lat&longitude=$lon&current=weather_code"
+    }
+
+    companion object {
+        private const val BASE_URL_GEOCODE = "https://nominatim.openstreetmap.org/"
+        private const val BASE_URL_WEATHER = "https://api.open-meteo.com/v1/"
     }
 }
 
 class LocationInfoRemote(
     private val locationProvider: LocationProvider,
-
-    ){
+){
 
     var locationInfo: LocationInfo? = null
     private var timestamp: Long = 0L
@@ -63,6 +68,7 @@ class LocationInfoRemote(
         }
         return locationInfo!!
     }
+
     suspend fun getCityName(lat: Double, lon: Double): String? {
         return withContext(Dispatchers.IO) {
             val connection = URL(ApiEndpoint.ReverseGeocode(lat, lon).url)
@@ -103,5 +109,4 @@ class LocationInfoRemote(
             }
         }
     }
-
 }

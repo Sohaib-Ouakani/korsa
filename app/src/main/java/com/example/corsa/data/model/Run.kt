@@ -23,7 +23,7 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
     @SerialName("distance_meters")
     val distanceMeters: Float,
     @SerialName("mean_pace_seconds")
-    val meanPaceSeconds: Int,   // e.g. 320 = 5:20/km
+    val meanPaceSeconds: Int,
     val temperature: Float?,
     @SerialName("elevation_gain")
     val elevationGain: Float?,
@@ -36,30 +36,24 @@ data class Run @OptIn(ExperimentalUuidApi::class) constructor(
 ) {
     val startTimeLocal: LocalDateTime
         get() = startTime.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    val endTimeLocal: LocalDateTime
-        get() = endTime.toLocalDateTime(TimeZone.currentSystemDefault())
 }
 
 @Serializable
 data class RunInsert(
-//     val id: String,
      @SerialName("user_id")
      val userId: String,
      @SerialName("start_time")
      val startTime: Instant,
      @SerialName("end_time")
      val endTime: Instant,
-     val path: String,           // GeoJSON LineString from ST_AsGeoJSON
+     val path: String,
      @SerialName("distance_meters")
      val distanceMeters: Float,
      @SerialName("mean_pace_seconds")
-     val meanPaceSeconds: Int,   // e.g. 320 = 5:20/km
+     val meanPaceSeconds: Int,
      val temperature: Float?,
      @SerialName("elevation_gain")
      val elevationGain: Float?,
-//     @SerialName("created_at")
-//     val createdAt: Instant,
      @SerialName("preview_path")
      val previewPath: String? = null
 )

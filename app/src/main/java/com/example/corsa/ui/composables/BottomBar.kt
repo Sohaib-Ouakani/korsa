@@ -1,6 +1,5 @@
 package com.example.corsa.ui.composables
 
-import android.R.attr.scaleX
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.RowScope
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
@@ -33,7 +31,7 @@ fun BottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination
 
-    BottomAppBar() {
+    BottomAppBar {
         FollowItem(currentRoute, navController)
         RunItem(currentRoute, navController)
         StatsItem(currentRoute, navController)

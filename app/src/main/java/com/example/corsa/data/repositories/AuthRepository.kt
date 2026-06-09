@@ -1,6 +1,5 @@
 package com.example.corsa.data.repositories
 
-
 import android.content.Intent
 import com.example.corsa.data.model.Profile
 import io.github.jan.supabase.SupabaseClient
@@ -12,6 +11,7 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserSession
 
 interface AuthRepository {
+
     suspend fun login(email: String, password: String)
     suspend fun register(email: String, password: String)
     suspend fun logout()

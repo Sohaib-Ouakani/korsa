@@ -17,16 +17,14 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
-import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.String
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-// ── Interface ──────────────────────────────────────────────────────────────
 interface ProfilesRepository {
+
     suspend fun getProfileByUserId(userId: String, cachedValue: Boolean? = true): Profile
     suspend fun getUserEntryByUserId(userId: String): UserEntry
     suspend fun getAllProfiles(): List<Profile>
@@ -37,19 +35,17 @@ interface ProfilesRepository {
     suspend fun weeklyKmByUserId(userId: String): Float
     suspend fun getProfilesIDoNotFollow(cachedValue: Boolean? = true): List<Profile>
     suspend fun getIfIFollowAProfileByUserId(userId: String): Boolean
-    suspend fun AddFollowToAProfileByUserId(userId: String)
-    suspend fun StopFollowToAProfileByUserId(userId: String)
+    suspend fun addFollowToAProfileByUserId(userId: String)
+    suspend fun stopFollowToAProfileByUserId(userId: String)
     suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String
     suspend fun increaseChallengeNumber()
     fun avatarUrl(path: String): String
 }
 
-// ── Fake implementation ────────────────────────────────────────────────────
 class ProfilesRepositoryImpl(
     private val supabase: SupabaseClient
 ) : ProfilesRepository {
 
-    private val ttlMs = 10 * 60 * 1000L
     private val _getProfileByUserIdTimeStamp = mutableMapOf<String, Long>()
     private val _getProfileByUserIdCache = mutableMapOf<String, Profile>()
     private val _getProfilesIDoNotFollowTimestamp = mutableMapOf<String, Long>()
@@ -58,10 +54,8 @@ class ProfilesRepositoryImpl(
     private val _getProfileIFollowCache = mutableMapOf<String, List<Profile>>()
     private var _getMyProfileTimestamp: Long? = null
     private var _getMyProfileCache: Profile? = null
-
     private var _wasFollowANewUserNotFriend: Boolean = false
     private var _wasFollowANewUserFriend: Boolean = false
-
 
     override suspend fun getProfileByUserId(userId: String, cachedValue: Boolean?): Profile {
         val cachedProfile = _getProfileByUserIdCache[userId]
@@ -70,7 +64,7 @@ class ProfilesRepositoryImpl(
         if (cachedValue == true &&
             cachedProfile != null &&
             timestamp != null &&
-            System.currentTimeMillis() - timestamp < ttlMs
+            System.currentTimeMillis() - timestamp < TTL_MS
         ) {
             return cachedProfile
         }
@@ -94,7 +88,7 @@ class ProfilesRepositoryImpl(
         val zone = TimeZone.currentSystemDefault()
         val today = now.toLocalDateTime(zone).date
 
-        // Get the start of the current week (Monday)
+        // get the start of the current week (Monday)
         val startOfWeek = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
         val startInstant = startOfWeek.atStartOfDayIn(zone)
 
@@ -111,7 +105,7 @@ class ProfilesRepositoryImpl(
         return runs.sumOf { it.distanceMeters.toDouble() }.toFloat() / 1000f
     }
 
-    override suspend fun getProfilesIDoNotFollow(cachedValue: Boolean? ): List<Profile> {
+    override suspend fun getProfilesIDoNotFollow(cachedValue: Boolean?): List<Profile> {
         val currentProfileId = getMyProfile().id
         val cachedProfiles = _getProfilesIDoNotFollowCache[currentProfileId]
         val timestamp = _getProfilesIDoNotFollowTimestamp[currentProfileId]
@@ -119,7 +113,7 @@ class ProfilesRepositoryImpl(
         if (cachedValue == true &&
                 cachedProfiles != null &&
                 timestamp != null &&
-                System.currentTimeMillis() - timestamp < ttlMs &&
+                System.currentTimeMillis() - timestamp < TTL_MS &&
                 !_wasFollowANewUserNotFriend
         ) {
             return cachedProfiles
@@ -151,8 +145,6 @@ class ProfilesRepositoryImpl(
         return getProfileIFollow().map { it.id }.contains(userId)
     }
 
-
-
     override suspend fun getProfileIFollow(cachedValue: Boolean?): List<Profile> {
         val currentUserId = getMyProfile().id
         val cachedProfiles = _getProfileIFollowCache[currentUserId]
@@ -161,7 +153,7 @@ class ProfilesRepositoryImpl(
         if (cachedValue == true &&
             cachedProfiles != null &&
             timestamp != null &&
-            System.currentTimeMillis() - timestamp < ttlMs &&
+            System.currentTimeMillis() - timestamp < TTL_MS &&
             !_wasFollowANewUserFriend
         ) {
             return cachedProfiles
@@ -197,7 +189,7 @@ class ProfilesRepositoryImpl(
         return result
     }
 
-    override suspend fun AddFollowToAProfileByUserId(userId: String) {
+    override suspend fun addFollowToAProfileByUserId(userId: String) {
         val currentProfileId = getMyProfile().id
         _wasFollowANewUserFriend = true
         _wasFollowANewUserNotFriend = true
@@ -205,7 +197,7 @@ class ProfilesRepositoryImpl(
             .insert(FollowInsert(followerId = currentProfileId, followingId = userId))
     }
 
-    override suspend fun StopFollowToAProfileByUserId(userId: String) {
+    override suspend fun stopFollowToAProfileByUserId(userId: String) {
         val currentProfileId = getMyProfile().id
         _wasFollowANewUserFriend = true
         _wasFollowANewUserNotFriend = true
@@ -245,14 +237,14 @@ class ProfilesRepositoryImpl(
             .decodeList<Profile>()
     }
 
-    override suspend fun getMyProfile(cachedValue: Boolean? ): Profile {
+    override suspend fun getMyProfile(cachedValue: Boolean?): Profile {
         val cachedProfile = _getMyProfileCache
         val timestamp = _getMyProfileTimestamp
 
         if (cachedValue == true &&
             cachedProfile != null &&
             timestamp != null &&
-            System.currentTimeMillis() - timestamp < ttlMs
+            System.currentTimeMillis() - timestamp < TTL_MS
         ) {
             return cachedProfile
         }
@@ -302,14 +294,12 @@ class ProfilesRepositoryImpl(
         )
     }
 
-
-
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String): String {
         val userId = getMyAuthUserId()
         val extension = if (mimeType == "image/png") "png" else "jpg"
 
-        // Delete old avatar if exists
+        // delete old avatar if exists
         runCatching {
             val old = getMyProfile().avatarPath
             if (old != null) supabase.storage.from("avatars").delete(listOf(old))
@@ -336,7 +326,10 @@ class ProfilesRepositoryImpl(
         }
     }
 
-    fun Instant?.isInCurrentWeek(): Boolean {
+    override fun avatarUrl(path: String): String =
+        supabase.storage.from("avatars").publicUrl(path)
+
+    private fun Instant?.isInCurrentWeek(): Boolean {
         if (this == null) return false
 
         val now = Clock.System.now()
@@ -345,16 +338,17 @@ class ProfilesRepositoryImpl(
         val todayDate = now.toLocalDateTime(timeZone).date
         val thisDate = this.toLocalDateTime(timeZone).date
 
-        // Find the Monday of the current week
+        // find the Monday of the current week
         val startOfWeek = todayDate.minus(todayDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
 
         return thisDate in startOfWeek..todayDate
     }
 
-    override fun avatarUrl(path: String): String =
-        supabase.storage.from("avatars").publicUrl(path)
-
     private fun getMyAuthUserId(): String {
         return supabase.auth.currentUserOrNull()?.id ?: error("User not authenticated")
+    }
+
+    companion object {
+        private const val TTL_MS = 3 * 60 * 1000L // 3 min
     }
 }
