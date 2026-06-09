@@ -46,11 +46,11 @@ fun SettingsScreen(
     state: SettingsState,
     actions: SettingsActions
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
         when(state.error) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
@@ -59,14 +59,14 @@ fun SettingsScreen(
         SplashScreen()
     } else {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { SnackbarHost(snackBarHostState) },
             topBar = { BackTopBar(navController) }
         ) { padding ->
             MainContent(
                 state = state,
                 actions = actions,
                 padding = padding,
-                snackbarHostState = snackbarHostState
+                snackBarHostState = snackBarHostState
             )
         }
     }
@@ -77,7 +77,7 @@ private fun MainContent(
     state: SettingsState,
     actions: SettingsActions,
     padding: PaddingValues,
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
 ) {
     val context = LocalContext.current
 
@@ -90,10 +90,10 @@ private fun MainContent(
             ?: return@rememberLauncherForActivityResult
         actions.uploadAvatar(bytes, mimeType)
     }
-    val scope = rememberCoroutineScope()
 
-    val showSnackbar: (String) -> Unit = { message ->
-        scope.launch { snackbarHostState.showSnackbar(message) }
+    val scope = rememberCoroutineScope()
+    val showSnackBar: (String) -> Unit = { message ->
+        scope.launch { snackBarHostState.showSnackbar(message) }
     }
 
     val ui = state.uiState
@@ -160,9 +160,9 @@ private fun MainContent(
             Button(
                 onClick = {
                     when {
-                        ui.newPassword.isBlank() -> showSnackbar("Inserisci una nuova password")
-                        ui.newPassword.length < 8 -> showSnackbar("La password deve essere di almeno 8 caratteri")
-                        ui.newPassword != ui.confirmPassword -> showSnackbar("Le password non coincidono")
+                        ui.newPassword.isBlank() -> showSnackBar("Inserisci una nuova password")
+                        ui.newPassword.length < 8 -> showSnackBar("La password deve essere di almeno 8 caratteri")
+                        ui.newPassword != ui.confirmPassword -> showSnackBar("Le password non coincidono")
                         else -> uiActions.onShowReAuthDialogChange(true)
                     }
                 },
@@ -308,7 +308,6 @@ private fun ColumnScope.Avatar(
             }
         }
 
-        // Tap-to-edit overlay
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

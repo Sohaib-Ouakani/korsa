@@ -12,7 +12,3 @@ object Spacing {
     val xxxl = 100.dp
     val cardSpacing = 90.dp
 }
-
-// Usage:
-// Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
-

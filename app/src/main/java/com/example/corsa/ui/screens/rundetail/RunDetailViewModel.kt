@@ -8,7 +8,6 @@ import com.example.corsa.data.model.Run
 import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.utils.AppError
-import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -28,7 +27,7 @@ data class CommentEntry(
 )
 
 data class RunDetailState(
-    val isLoading: Boolean,
+    val isLoading: Boolean = true,
     val run: Run = emptyRun,
     val comments: List<CommentEntry> = listOf(),
     val likeCount: Int = 0,
@@ -57,9 +56,7 @@ class RunDetailViewModel(
     private val _runId: String? = savedStateHandle["runId"]
     private val _shareToken: String? = savedStateHandle["shareToken"]
 
-    private val _runDetailState = MutableStateFlow(RunDetailState(
-        isLoading = true
-    ))
+    private val _runDetailState = MutableStateFlow(RunDetailState())
     val runDetailState = _runDetailState.asStateFlow()
 
     init {

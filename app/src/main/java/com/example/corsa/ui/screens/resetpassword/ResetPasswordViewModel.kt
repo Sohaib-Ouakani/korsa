@@ -23,7 +23,7 @@ data class ResetPasswordActions(
 
 class ResetPasswordViewModel(
     private val authRepository: AuthRepository
-): ViewModel() {
+) : ViewModel() {
 
     val resetPasswordActions = ResetPasswordActions(
         resetPassword = ::resetPassword,

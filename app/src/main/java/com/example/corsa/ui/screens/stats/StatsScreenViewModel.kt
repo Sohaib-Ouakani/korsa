@@ -7,7 +7,6 @@ import com.example.corsa.data.repositories.ProfilesRepository
 import com.example.corsa.data.repositories.RunsRepository
 import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.utils.AppError
-import com.example.corsa.utils.Option
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -17,15 +16,16 @@ data class StatsState(
     val profile: UserEntry = UserEntry("", null, 0f, 0, 0, 0f),
     val runs: List<Run> = listOf(),
     val error: AppError = AppError.Absent
-        )
+)
 
 data class StatsActions(
     val refreshProfile: () -> Unit,
 )
+
 class StatsScreenViewModel(
     private val profilesRepository: ProfilesRepository,
     private val runsRepository: RunsRepository
-): ViewModel() {
+) : ViewModel() {
 
     val statsActions = StatsActions(
         refreshProfile = ::loadProfile,
@@ -36,7 +36,6 @@ class StatsScreenViewModel(
 
 
     init {
-
         observeRuns()
     }
 
@@ -80,7 +79,6 @@ class StatsScreenViewModel(
             } finally {
                 _statsState.updateState(isLoading = false)
             }
-
         }
     }
 

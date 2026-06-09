@@ -3,7 +3,6 @@ package com.example.corsa.ui.screens.resetpassword
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -18,7 +17,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.corsa.ui.CorsaRoute
-import com.example.corsa.ui.composables.AppBarText
 import com.example.corsa.ui.composables.BackTopBar
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
@@ -29,18 +27,18 @@ fun ResetPasswordScreen(
     state: ResetPasswordState,
     actions: ResetPasswordActions
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state.error) {
         when (state.error) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
 
     Scaffold(
         topBar = { BackTopBar(navController) },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier

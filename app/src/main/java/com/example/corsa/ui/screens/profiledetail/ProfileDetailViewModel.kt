@@ -47,7 +47,7 @@ class ProfileDetailViewModel(
         loadFollowState()
     }
 
-    fun loadProfile() {
+    private fun loadProfile() {
         viewModelScope.launch {
             _state.updateState(
                 isLoading = true,
@@ -93,7 +93,7 @@ class ProfileDetailViewModel(
         }
     }
 
-    fun toggleFollow() {
+    private fun toggleFollow() {
         viewModelScope.launch {
             _state.updateState(
                 isLoading = true,
@@ -127,6 +127,6 @@ class ProfileDetailViewModel(
             userEntry = userEntry ?: value.userEntry,
             isFollowing = isFollowing ?: value.isFollowing,
             error = error?: value.error,
-            )
+        )
     }
 }

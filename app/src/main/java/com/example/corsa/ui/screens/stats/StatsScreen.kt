@@ -1,46 +1,35 @@
 package com.example.corsa.ui.screens.stats
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.corsa.ui.composables.BottomBar
 import com.example.corsa.ui.composables.ProfileStats
 import com.example.corsa.ui.composables.TopBar
 import com.example.corsa.ui.composables.UserEntry
 import com.example.corsa.ui.screens.splash.SplashScreen
-import com.example.corsa.ui.screens.splash.sprint
+import com.example.corsa.utils.sprint
 import com.example.corsa.ui.theme.Size
 import com.example.corsa.ui.theme.Spacing
 import com.example.corsa.utils.AppError
-
 
 @Composable
 fun StatsScreen(
@@ -48,16 +37,15 @@ fun StatsScreen(
     state: StatsState,
     actions: StatsActions
 ) {
-
     LaunchedEffect(Unit) {
-        actions.refreshProfile()  // re-fetches every time the screen enters composition
+        actions.refreshProfile()
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
         when (state.error ) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
@@ -67,7 +55,7 @@ fun StatsScreen(
     Scaffold(
         topBar = { TopBar(navController, state.profile.avatarUrl) },
         bottomBar = { BottomBar(navController) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
     ) { contentPadding ->
         Column(modifier = Modifier.padding(contentPadding)) {
             if (!state.isLoading) {
@@ -95,13 +83,13 @@ private fun ProfileHeader(
             .fillMaxWidth()
             .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween, // nome a sx, avatar a dx
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = infoEntries.displayName,
             color = cs.onSurface,
             style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.weight(1f),// occupa lo spazio senza spingere l'avatar
+            modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(Spacing.md))
         Icon(

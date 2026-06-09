@@ -1,14 +1,9 @@
 package com.example.corsa.ui.screens
 
-import android.content.Intent
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.corsa.data.repositories.AuthRepository
-import io.github.jan.supabase.auth.status.SessionSource
 import io.github.jan.supabase.auth.status.SessionStatus
-import io.github.jan.supabase.auth.user.UserSession
-import io.ktor.http.ParametersBuilder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -24,7 +19,7 @@ enum class AppSessionStatus {
 
 class SessionViewModel(
     authRepository: AuthRepository,
-): ViewModel() {
+) : ViewModel() {
     private val _appSessionStatus = MutableStateFlow(AppSessionStatus.Loading)
     val appSessionStatus = _appSessionStatus.asStateFlow()
 

@@ -2,14 +2,12 @@ package com.example.corsa.ui.screens.splash
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.corsa.ui.theme.Spacing
+import com.example.corsa.utils.sprint
 
 @Composable
 fun SplashScreen() {

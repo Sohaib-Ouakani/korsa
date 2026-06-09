@@ -1,4 +1,4 @@
-package com.example.corsa.ui.screens.splash
+package com.example.corsa.utils
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType

@@ -23,7 +23,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.corsa.ui.CorsaRoute
 import androidx.navigation.NavDestination.Companion.hasRoute
-import com.example.corsa.ui.screens.splash.sprint
+import com.example.corsa.utils.sprint
 import com.example.corsa.ui.theme.Size
 
 @Composable

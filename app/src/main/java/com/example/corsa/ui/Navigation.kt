@@ -73,15 +73,15 @@ fun CorsaNavGraph(
         AppSessionStatus.NotAuthenticated -> {
             NavHost(
                 navController = navController,
-                startDestination = CorsaRoute.AuthScreen
+                startDestination = AuthScreen
             ) {
-                composable<CorsaRoute.AuthScreen> {
+                composable<AuthScreen> {
                     AuthScreen(
                         navController = navController,
                         redirectedFromRunDeepLink = (origin is DeepLink.SharedRun)
                     )
                 }
-                composable<CorsaRoute.LoginScreen> {
+                composable<LoginScreen> {
                     val loginViewModel = koinViewModel<LoginViewModel>()
                     val state by loginViewModel.loginState.collectAsStateWithLifecycle()
                     LoginScreen(
@@ -90,7 +90,7 @@ fun CorsaNavGraph(
                         actions = loginViewModel.loginActions,
                     )
                 }
-                composable<CorsaRoute.RegisterScreen> {
+                composable<RegisterScreen> {
                     val registerViewModel = koinViewModel<RegisterViewModel>()
                     val state by registerViewModel.registerState.collectAsStateWithLifecycle()
                     RegisterScreen(
@@ -148,13 +148,13 @@ fun CorsaNavGraph(
                         actions = statsViewModel.statsActions,
                     )
                 }
-                composable<CorsaRoute.FollowScreen> {
+                composable<FollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
                     val followState by friendsVM.followState.collectAsStateWithLifecycle()
                     val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
                     FollowScreen(navController = navController, followState, searchState, friendsVM.followAction)
                 }
-                composable<CorsaRoute.SettingsScreen> {
+                composable<SettingsScreen> {
                     val settingsViewModel = koinViewModel<SettingsViewModel>()
                     val state by settingsViewModel.settingsState.collectAsStateWithLifecycle()
                     SettingsScreen(
@@ -163,7 +163,7 @@ fun CorsaNavGraph(
                         actions = settingsViewModel.settingsActions,
                     )
                 }
-                composable<CorsaRoute.RunDetailScreen> {
+                composable<RunDetailScreen> {
                     val runDetailViewModel = koinViewModel<RunDetailViewModel>()
                     val state by runDetailViewModel.runDetailState.collectAsStateWithLifecycle()
                     RunDetailScreen(
@@ -181,17 +181,17 @@ fun CorsaNavGraph(
                         actions = runDetailViewModel.runDetailActions
                     )
                 }
-                composable<CorsaRoute.ProfileDetailScreen> {
+                composable<ProfileDetailScreen> {
                     val viewModel = koinViewModel<ProfileDetailViewModel>()
                     val state by viewModel.state.collectAsStateWithLifecycle()
                     ProfileDetailScreen(navController = navController, state, viewModel.profileDetailAction)
                 }
-                composable<CorsaRoute.AddFollowScreen> {
+                composable<AddFollowScreen> {
                     val friendsVM = koinViewModel<FollowingViewModel>()
                     val searchState by friendsVM.searchState.collectAsStateWithLifecycle()
                     AddFollowScreen(navController, searchState, friendsVM.followAction)
                 }
-                composable<CorsaRoute.PasswordResetScreen> {
+                composable<PasswordResetScreen> {
                     val resetPasswordViewModel = koinViewModel<ResetPasswordViewModel>()
                     val state by resetPasswordViewModel.resetPasswordState.collectAsStateWithLifecycle()
                     ResetPasswordScreen(

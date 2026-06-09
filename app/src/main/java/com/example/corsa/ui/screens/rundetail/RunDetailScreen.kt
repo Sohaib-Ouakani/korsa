@@ -33,7 +33,6 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -47,7 +46,6 @@ import org.maplibre.android.maps.MapView
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
-import androidx.core.graphics.toColorInt
 import com.example.corsa.data.model.Profile
 import com.example.corsa.data.model.Run
 import com.example.corsa.ui.CorsaRoute
@@ -60,7 +58,6 @@ import com.example.corsa.utils.toFeedDateString
 private const val ROUTE_SOURCE_ID = "run-route-source"
 private const val ROUTE_LAYER_ID  = "run-route-layer"
 private const val MAP_STYLE_URL   = "https://tiles.openfreemap.org/styles/liberty"
-private const val ROUTE_COLOR     = "#FF4500"   // orange-red
 private const val ROUTE_WIDTH     = 5f
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,11 +69,11 @@ fun RunDetailScreen(
 ) {
     val context = LocalContext.current
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
         when(state.error) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
@@ -91,7 +88,7 @@ fun RunDetailScreen(
         SplashScreen()
     } else {
         BottomSheetScaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { SnackbarHost(snackBarHostState) },
             scaffoldState = sheetState,
             topBar = {
                 BackTopBarWithShareRun(navController, state, context)
@@ -171,7 +168,6 @@ fun RunDetailMap(
 
     MapLibre.getInstance(context)
 
-    // Hoist MapView so lifecycle observer and AndroidView share the same instance
     val mapView = remember { MapView(context) }
 
     DisposableEffect(lifecycleOwner) {
@@ -191,7 +187,6 @@ fun RunDetailMap(
     val overlayColor = MaterialTheme.colorScheme.primary.toArgb()
 
     AndroidView(
-        // ── factory: runs ONCE — set up style, source, layer, camera here ──
         factory = { _ ->
             mapView.also { mv ->
                 mv.getMapAsync { map ->
@@ -202,10 +197,8 @@ fun RunDetailMap(
                         Log.d("RunDetailMap", "Feature count: ${fc.features()?.size}")
                         Log.d("RunDetailMap", "LatLng count: ${latLngs.size}")
 
-                        // 1. Source
                         style.addSource(GeoJsonSource(ROUTE_SOURCE_ID, fc))
 
-                        // 2. Layer (source must already be added above)
                         style.addLayer(
                             LineLayer(ROUTE_LAYER_ID, ROUTE_SOURCE_ID)
                                 .withProperties(
@@ -215,8 +208,6 @@ fun RunDetailMap(
                                     PropertyFactory.lineJoin("round")
                                 )
                         )
-
-                        // 3. Camera
 
                         when {
                             latLngs.size >= 2 -> {
@@ -244,7 +235,6 @@ fun RunDetailMap(
             }
         },
         modifier = modifier,
-        // ── update: runs on recomposition — only refresh source data ──────
         update = { mv ->
             mv.getMapAsync { map ->
                 val style = map.style ?: return@getMapAsync
@@ -365,7 +355,6 @@ fun UserDateRow(
 
 @Composable
 fun StatCardsGrid(run: Run) {
-    // Build the list dynamically so optional stats appear only when present
     val stats = buildList {
         add("Distance"  to formatDistance(run.distanceMeters))
         add("Pace"       to formatPace(run.meanPaceSeconds))
@@ -387,7 +376,6 @@ fun StatCardsGrid(run: Run) {
                         modifier = Modifier.weight(1f)
                     )
                 }
-                // Fill remaining slots in the last row so cards stay same width
                 repeat(3 - rowStats.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -570,21 +558,5 @@ fun CommentItem(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-    }
-}
-
-@Composable
-fun RunDetailError(message: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Spacing.lg),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error
-        )
     }
 }

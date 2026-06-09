@@ -51,17 +51,17 @@ fun ProfileDetailScreen(
     state: ProfileDetailState,
     action: ProfileDetailAction
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state) {
         when (state.error ) {
-            is AppError.Present -> snackbarHostState.showSnackbar(state.error.message)
+            is AppError.Present -> snackBarHostState.showSnackbar(state.error.message)
             else -> {}
         }
     }
     Scaffold(
         topBar = { BackTopBar(navController = navController) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -81,8 +81,6 @@ fun ProfileDetailScreen(
         }
     }
 }
-
-// ── Profile header ────────────────────────────────────────────────────────
 
 @Composable
 fun ProfileHeader(
@@ -150,7 +148,6 @@ fun ProfileHeader(
             }
         }
 
-        // Pulsante segui
         Button(
             onClick = {
                 android.util.Log.d("ProfileDetail", "Button clicked")
@@ -169,29 +166,5 @@ fun ProfileHeader(
         ) {
             Text(text = if (isFollowing) "Seguito" else "Segui")
         }
-    }
-}
-// ── Loading / Error states ────────────────────────────────────────────────
-
-@Composable
-fun ProfileDetailLoading() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-@Composable
-fun ProfileDetailError(message: String) {
-    Box(
-        modifier         = Modifier
-            .fillMaxSize()
-            .padding(Spacing.lg),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text  = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error
-        )
     }
 }
