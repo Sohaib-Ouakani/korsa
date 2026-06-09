@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Thunderstorm
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -16,7 +17,7 @@ enum class WeatherCondition(val icon: ImageVector, val label: String) {
     PARTLY_CLOUDY(Icons.Filled.WbCloudy,     "Partly cloudy"),
     OVERCAST    (Icons.Filled.Cloud,          "Overcast"),
     FOG         (Icons.Filled.Dehaze,     "Fog"),
-    RAIN        (Icons.Filled.Grain,          "Rain"),
+    RAIN        (Icons.Filled.WaterDrop,          "Rain"),
     SNOW        (Icons.Filled.AcUnit,         "Snow"),
     THUNDERSTORM(Icons.Filled.Thunderstorm,   "Thunderstorm"),
     UNKNOWN     (Icons.Filled.QuestionMark,  "Unknown");
